@@ -1,0 +1,120 @@
+<svg width="1400" height="420" viewBox="0 0 1400 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">CyberCore Technology Banner</title>
+  <desc id="desc">Banner tong hop cac cong nghe Data Engineering, Database, Lakehouse, DevOps va Backend.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1400" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#050816"/>
+      <stop offset="0.52" stop-color="#0A1D3F"/>
+      <stop offset="1" stop-color="#072A39"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="70" y1="36" x2="1330" y2="384" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#112349" stop-opacity="0.86"/>
+      <stop offset="1" stop-color="#0C2E3F" stop-opacity="0.86"/>
+    </linearGradient>
+    <filter id="blur" x="-120" y="-120" width="1640" height="660" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="34"/>
+    </filter>
+  </defs>
+
+  <rect width="1400" height="420" rx="26" fill="url(#bg)"/>
+
+  <g filter="url(#blur)">
+    <circle cx="170" cy="80" r="130" fill="#22D3EE" fill-opacity="0.20"/>
+    <circle cx="1240" cy="338" r="140" fill="#F97316" fill-opacity="0.18"/>
+  </g>
+
+  <rect x="52" y="28" width="1296" height="364" rx="20" fill="url(#panel)" stroke="#7DD3FC" stroke-opacity="0.34"/>
+
+  <text x="700" y="84" text-anchor="middle" fill="#E0F2FE" font-family="Georgia, 'Times New Roman', serif" font-size="32" font-weight="700" letter-spacing="1.3">
+    PRIME OPTIMUS • TECH STACK LAB
+  </text>
+  <text x="700" y="114" text-anchor="middle" fill="#BAE6FD" font-family="Verdana, Geneva, sans-serif" font-size="16" font-weight="600" letter-spacing="1.8">
+    DATA ENGINEERING • DATABASE • LAKEHOUSE • DEVOPS • BACKEND
+  </text>
+
+  <g>
+    <rect x="92" y="146" width="236" height="224" rx="14" fill="#0D1C3D" stroke="#38BDF8" stroke-opacity="0.45"/>
+    <text x="112" y="174" fill="#E0F2FE" font-family="Verdana, Geneva, sans-serif" font-size="15" font-weight="700">Data Engineering</text>
+    <g font-family="Verdana, Geneva, sans-serif" font-size="12" font-weight="700">
+      <rect x="112" y="190" width="196" height="28" rx="8" fill="#1E293B" stroke="#F97316" stroke-opacity="0.7"/>
+      <circle cx="126" cy="204" r="7" fill="#F97316"/><text x="140" y="208" fill="#FED7AA">Apache Spark</text>
+      <rect x="112" y="224" width="196" height="28" rx="8" fill="#1E293B" stroke="#D946EF" stroke-opacity="0.7"/>
+      <circle cx="126" cy="238" r="7" fill="#D946EF"/><text x="140" y="242" fill="#F5D0FE">Apache Flink</text>
+      <rect x="112" y="258" width="196" height="28" rx="8" fill="#1E293B" stroke="#06B6D4" stroke-opacity="0.7"/>
+      <circle cx="126" cy="272" r="7" fill="#06B6D4"/><text x="140" y="276" fill="#CFFAFE">Apache Kafka</text>
+      <rect x="112" y="292" width="196" height="28" rx="8" fill="#1E293B" stroke="#F59E0B" stroke-opacity="0.7"/>
+      <circle cx="126" cy="306" r="7" fill="#F59E0B"/><text x="140" y="310" fill="#FDE68A">Apache Airflow</text>
+      <rect x="112" y="326" width="196" height="28" rx="8" fill="#1E293B" stroke="#EF4444" stroke-opacity="0.7"/>
+      <circle cx="126" cy="340" r="7" fill="#EF4444"/><text x="140" y="344" fill="#FECACA">dbt</text>
+    </g>
+  </g>
+
+  <g>
+    <rect x="344" y="146" width="236" height="224" rx="14" fill="#0D1C3D" stroke="#38BDF8" stroke-opacity="0.45"/>
+    <text x="364" y="174" fill="#E0F2FE" font-family="Verdana, Geneva, sans-serif" font-size="15" font-weight="700">Database</text>
+    <g font-family="Verdana, Geneva, sans-serif" font-size="12" font-weight="700">
+      <rect x="364" y="190" width="196" height="28" rx="8" fill="#1E293B" stroke="#60A5FA" stroke-opacity="0.7"/>
+      <circle cx="378" cy="204" r="7" fill="#60A5FA"/><text x="392" y="208" fill="#DBEAFE">PostgreSQL</text>
+      <rect x="364" y="224" width="196" height="28" rx="8" fill="#1E293B" stroke="#F97316" stroke-opacity="0.7"/>
+      <circle cx="378" cy="238" r="7" fill="#F97316"/><text x="392" y="242" fill="#FED7AA">MySQL</text>
+      <rect x="364" y="258" width="196" height="28" rx="8" fill="#1E293B" stroke="#22C55E" stroke-opacity="0.7"/>
+      <circle cx="378" cy="272" r="7" fill="#22C55E"/><text x="392" y="276" fill="#DCFCE7">MongoDB</text>
+      <rect x="364" y="292" width="196" height="28" rx="8" fill="#1E293B" stroke="#EF4444" stroke-opacity="0.7"/>
+      <circle cx="378" cy="306" r="7" fill="#EF4444"/><text x="392" y="310" fill="#FECACA">Redis</text>
+      <rect x="364" y="326" width="196" height="28" rx="8" fill="#1E293B" stroke="#EAB308" stroke-opacity="0.7"/>
+      <circle cx="378" cy="340" r="7" fill="#EAB308"/><text x="392" y="344" fill="#FEF08A">ClickHouse</text>
+    </g>
+  </g>
+
+  <g>
+    <rect x="596" y="146" width="236" height="224" rx="14" fill="#0D1C3D" stroke="#38BDF8" stroke-opacity="0.45"/>
+    <text x="616" y="174" fill="#E0F2FE" font-family="Verdana, Geneva, sans-serif" font-size="15" font-weight="700">Data Lakehouse</text>
+    <g font-family="Verdana, Geneva, sans-serif" font-size="12" font-weight="700">
+      <rect x="616" y="190" width="196" height="28" rx="8" fill="#1E293B" stroke="#22D3EE" stroke-opacity="0.7"/>
+      <circle cx="630" cy="204" r="7" fill="#22D3EE"/><text x="644" y="208" fill="#CFFAFE">Apache Iceberg</text>
+      <rect x="616" y="224" width="196" height="28" rx="8" fill="#1E293B" stroke="#A855F7" stroke-opacity="0.7"/>
+      <circle cx="630" cy="238" r="7" fill="#A855F7"/><text x="644" y="242" fill="#E9D5FF">Delta Lake</text>
+      <rect x="616" y="258" width="196" height="28" rx="8" fill="#1E293B" stroke="#38BDF8" stroke-opacity="0.7"/>
+      <circle cx="630" cy="272" r="7" fill="#38BDF8"/><text x="644" y="276" fill="#DBEAFE">Apache Hudi</text>
+      <rect x="616" y="292" width="196" height="28" rx="8" fill="#1E293B" stroke="#F59E0B" stroke-opacity="0.7"/>
+      <circle cx="630" cy="306" r="7" fill="#F59E0B"/><text x="644" y="310" fill="#FDE68A">Trino</text>
+      <rect x="616" y="326" width="196" height="28" rx="8" fill="#1E293B" stroke="#22C55E" stroke-opacity="0.7"/>
+      <circle cx="630" cy="340" r="7" fill="#22C55E"/><text x="644" y="344" fill="#DCFCE7">Apache Parquet</text>
+    </g>
+  </g>
+
+  <g>
+    <rect x="848" y="146" width="236" height="224" rx="14" fill="#0D1C3D" stroke="#38BDF8" stroke-opacity="0.45"/>
+    <text x="868" y="174" fill="#E0F2FE" font-family="Verdana, Geneva, sans-serif" font-size="15" font-weight="700">DevOps</text>
+    <g font-family="Verdana, Geneva, sans-serif" font-size="12" font-weight="700">
+      <rect x="868" y="190" width="196" height="28" rx="8" fill="#1E293B" stroke="#60A5FA" stroke-opacity="0.7"/>
+      <circle cx="882" cy="204" r="7" fill="#60A5FA"/><text x="896" y="208" fill="#DBEAFE">Docker</text>
+      <rect x="868" y="224" width="196" height="28" rx="8" fill="#1E293B" stroke="#2563EB" stroke-opacity="0.7"/>
+      <circle cx="882" cy="238" r="7" fill="#2563EB"/><text x="896" y="242" fill="#BFDBFE">Kubernetes</text>
+      <rect x="868" y="258" width="196" height="28" rx="8" fill="#1E293B" stroke="#A855F7" stroke-opacity="0.7"/>
+      <circle cx="882" cy="272" r="7" fill="#A855F7"/><text x="896" y="276" fill="#E9D5FF">Terraform</text>
+      <rect x="868" y="292" width="196" height="28" rx="8" fill="#1E293B" stroke="#F97316" stroke-opacity="0.7"/>
+      <circle cx="882" cy="306" r="7" fill="#F97316"/><text x="896" y="310" fill="#FED7AA">GitHub Actions</text>
+      <rect x="868" y="326" width="196" height="28" rx="8" fill="#1E293B" stroke="#84CC16" stroke-opacity="0.7"/>
+      <circle cx="882" cy="340" r="7" fill="#84CC16"/><text x="896" y="344" fill="#ECFCCB">Prometheus</text>
+    </g>
+  </g>
+
+  <g>
+    <rect x="1100" y="146" width="236" height="224" rx="14" fill="#0D1C3D" stroke="#38BDF8" stroke-opacity="0.45"/>
+    <text x="1120" y="174" fill="#E0F2FE" font-family="Verdana, Geneva, sans-serif" font-size="15" font-weight="700">Backend</text>
+    <g font-family="Verdana, Geneva, sans-serif" font-size="12" font-weight="700">
+      <rect x="1120" y="190" width="196" height="28" rx="8" fill="#1E293B" stroke="#22C55E" stroke-opacity="0.7"/>
+      <circle cx="1134" cy="204" r="7" fill="#22C55E"/><text x="1148" y="208" fill="#DCFCE7">Go</text>
+      <rect x="1120" y="224" width="196" height="28" rx="8" fill="#1E293B" stroke="#FB7185" stroke-opacity="0.7"/>
+      <circle cx="1134" cy="238" r="7" fill="#FB7185"/><text x="1148" y="242" fill="#FFE4E6">Java</text>
+      <rect x="1120" y="258" width="196" height="28" rx="8" fill="#1E293B" stroke="#06B6D4" stroke-opacity="0.7"/>
+      <circle cx="1134" cy="272" r="7" fill="#06B6D4"/><text x="1148" y="276" fill="#CFFAFE">Node.js</text>
+      <rect x="1120" y="292" width="196" height="28" rx="8" fill="#1E293B" stroke="#A78BFA" stroke-opacity="0.7"/>
+      <circle cx="1134" cy="306" r="7" fill="#A78BFA"/><text x="1148" y="310" fill="#DDD6FE">FastAPI</text>
+      <rect x="1120" y="326" width="196" height="28" rx="8" fill="#1E293B" stroke="#14B8A6" stroke-opacity="0.7"/>
+      <circle cx="1134" cy="340" r="7" fill="#14B8A6"/><text x="1148" y="344" fill="#CCFBF1">gRPC</text>
+    </g>
+  </g>
+</svg>
