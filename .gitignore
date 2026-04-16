@@ -1,0 +1,66 @@
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Node.js / JavaScript / TypeScript
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.turbo/
+.next/
+.nuxt/
+.svelte-kit/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Go
+bin/
+*.test
+*.out
+
+# Rust
+target/
+
+# Java / JVM (Maven, Gradle, IntelliJ)
+.gradle/
+build/
+out/
+*.class
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Containers
+.docker/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
