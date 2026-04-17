@@ -1,147 +1,147 @@
-# Chuong 05 - Secure Your Services
+# Chương 05 - Secure Your Services
 
-## Doi tuong va muc tieu tai lieu
-- Doi tuong: nguoi hoc Go tu co ban den trung cap, muon nam chac nen tang va cach ap dung thuc te.
-- Muc tieu: chuyen noi dung chuong thanh tai lieu tu hoc co the dung lai cho ca nhan, nhom hoc, hoac onboarding.
+## Đối tượng và mục tiêu tài liệu
+- Đối tượng: người học Go từ cơ bản đến trung cấp, muốn nắm chắc nền tảng và cách áp dụng thực tế.
+- Mục tiêu: chuyển nội dung chương thành tài liệu tự học có thể dùng lại cho cá nhân, nhóm học, hoặc onboarding.
 
-## Muc tieu hoc tap
-Sau khi hoan thanh chuong nay, nguoi hoc co the:
-- [ ] Giai thich cac y chinh bang ngon ngu cua minh.
-- [ ] Ap dung ky thuat trong chuong vao mot chuong trinh Go nho.
-- [ ] Nhan dien loi pho bien va cach tranh.
-- [ ] Lien ket kien thuc chuong nay voi cac chuong truoc va sau.
+## Mục tiêu học tập
+Sau khi hoàn thành chương này, người học có thể:
+- [ ] Giải thích các ý chính bằng ngôn ngữ của mình.
+- [ ] Áp dụng kỹ thuật trong chương vào một chương trình Go nhỏ.
+- [ ] Nhận diện lỗi phổ biến và cách tránh.
+- [ ] Liên kết kiến thức chương này với các chương trước và sau.
 
-## Yeu cau truoc khi hoc
-- Kien thuc nen tang can co:
+## Yêu cầu trước khi học
+- Kiến thức nền tảng cần có:
   - [ ]
-- Cong cu va moi truong:
-  - [ ] Phien ban Go:
-  - [ ] Trinh soan thao/IDE:
-  - [ ] He dieu hanh:
+- Công cụ và môi trường:
+  - [ ] Phiên bản Go:
+  - [ ] Trình soạn thảo/IDE:
+  - [ ] Hệ điều hành:
 
-## Tom tat nhanh (TL;DR)
-Viet 5-10 dong ngan tra loi cac cau hoi:
-1. Chuong nay giai quyet van de gi?
-2. Ket luan quan trong nhat la gi?
-3. Nguoi moi can nho dieu gi dau tien?
+## Tóm tắt nhanh (TL;DR)
+Viết 5-10 dòng ngắn trả lời các câu hỏi:
+1. Chương này giải quyết vấn đề gì?
+2. Kết luận quan trọng nhất là gì?
+3. Người mới cần nhớ điều gì đầu tiên?
 
-## Ban do khai niem
-- Chu de cot loi:
-- Lien he voi chuong truoc:
-- Mo rong sang chuong sau:
-- Boi canh ap dung thuc te:
+## Bản đồ khái niệm
+- Chủ đề cốt lõi:
+- Liên hệ với chương trước:
+- Mở rộng sang chương sau:
+- Bối cảnh áp dụng thực tế:
 
-## Thuat ngu va dinh nghia
-| Thuat ngu | Y nghia trong chuong | Vi sao quan trong |
+## Thuật ngữ và định nghĩa
+| Thuật ngữ | Ý nghĩa trong chương | Vì sao quan trọng |
 |---|---|---|
 |  |  |  |
 |  |  |  |
 |  |  |  |
 
-## Ghi chu chi tiet
+## Ghi chú chi tiết
 
-### 1. Y chinh 1
-- Giai thich:
-- Mo hinh tu duy:
-- Vi du toi thieu:
-
-```go
-// Them vi du ngan tai day
-```
-
-- Khi nao nen dung:
-- Khi nao khong nen dung:
-
-### 2. Y chinh 2
-- Giai thich:
-- Mo hinh tu duy:
-- Vi du toi thieu:
+### 1. Ý chính 1
+- Giải thích:
+- Mô hình tư duy:
+- Ví dụ tối thiểu:
 
 ```go
-// Them vi du ngan tai day
+// Thêm ví dụ ngắn tại đây
 ```
 
-- Ghi chu ve hieu nang/do de doc:
+- Khi nào nên dùng:
+- Khi nào không nên dùng:
 
-### 3. Y chinh 3
-- Giai thich:
-- Vi du toi thieu:
+### 2. Ý chính 2
+- Giải thích:
+- Mô hình tư duy:
+- Ví dụ tối thiểu:
 
 ```go
-// Them vi du ngan tai day
+// Thêm ví dụ ngắn tại đây
 ```
 
-## Phan tich ma theo tung buoc
-Su dung mot vi du dai dien cua chuong:
-1. Dau vao va dau ra mong muon
-2. Kieu du lieu/cau truc du lieu chinh
-3. Luong xu ly hoac thuat toan
-4. Chien luoc xu ly loi
-5. Kiem tra ket qua cuoi cung
+- Ghi chú về hiệu năng/độ dễ đọc:
 
-## Loi thuong gap va meo debug
-| Loi | Trieu chung | Nguyen nhan goc | Cach khac phuc |
+### 3. Ý chính 3
+- Giải thích:
+- Ví dụ tối thiểu:
+
+```go
+// Thêm ví dụ ngắn tại đây
+```
+
+## Phân tích mã theo từng bước
+Sử dụng một ví dụ đại diện của chương:
+1. Đầu vào và đầu ra mong muốn
+2. Kiểu dữ liệu/cấu trúc dữ liệu chính
+3. Luồng xử lý hoặc thuật toán
+4. Chiến lược xử lý lỗi
+5. Kiểm tra kết quả cuối cùng
+
+## Lỗi thường gặp và mẹo debug
+| Lỗi | Triệu chứng | Nguyên nhân gốc | Cách khắc phục |
 |---|---|---|---|
 |  |  |  |  |
 |  |  |  |  |
 |  |  |  |  |
 
-## Checklist thuc hanh tot
-- [ ] Ten bien/ham ro rang, nhat quan.
-- [ ] Ham nho, lam mot viec.
-- [ ] Xu ly loi tuong minh.
-- [ ] Co kiem tra cac truong hop bien.
-- [ ] Ma nguon de doc va duoc format chuan.
+## Checklist thực hành tốt
+- [ ] Tên biến/hàm rõ ràng, nhất quán.
+- [ ] Hàm nhỏ, làm một việc.
+- [ ] Xử lý lỗi tường minh.
+- [ ] Có kiểm tra các trường hợp biên.
+- [ ] Mã nguồn dễ đọc và được format chuẩn.
 
-## So sanh va danh doi
-- Cach tiep can A:
-  - Uu diem:
-  - Nhuoc diem:
-- Cach tiep can B:
-  - Uu diem:
-  - Nhuoc diem:
-- Huong dan chon giai phap:
+## So sánh và đánh đổi
+- Cách tiếp cận A:
+  - Ưu điểm:
+  - Nhược điểm:
+- Cách tiếp cận B:
+  - Ưu điểm:
+  - Nhược điểm:
+- Hướng dẫn chọn giải pháp:
 
-## Bai tap luyen tap
-### Co ban
+## Bài tập luyện tập
+### Cơ bản
 1.
 2.
 
-### Trung cap
+### Trung cấp
 1.
 2.
 
-### Nang cao
+### Nâng cao
 1.
 2.
 
-## Y tuong mini project
-- Ten du an:
-- Muc tieu:
-- Yeu cau:
-- Mo rong tuy chon:
+## Ý tưởng mini project
+- Tên dự án:
+- Mục tiêu:
+- Yêu cầu:
+- Mở rộng tùy chọn:
 
-## Cau hoi phong van
+## Câu hỏi phỏng vấn
 1.
 2.
 3.
 
-## Tu danh gia sau khi hoc
-- Phan minh da hieu chac:
-- Phan con mo ho:
-- Cau hoi can quay lai:
+## Tự đánh giá sau khi học
+- Phần mình đã hiểu chắc:
+- Phần còn mơ hồ:
+- Câu hỏi cần quay lại:
 
-## Nhat ky thuc hanh
-| Ngay | Bai thuc hanh | Thoi gian | Ket qua | Hanh dong tiep theo |
+## Nhật ký thực hành
+| Ngày | Bài thực hành | Thời gian | Kết quả | Hành động tiếp theo |
 |---|---|---|---|---|
 |  |  |  |  |  |
 
-## Tai lieu tham khao
-- Trang sach:
-- Tai lieu Go chinh thuc:
-- Bai viet/video bo sung:
+## Tài liệu tham khảo
+- Trang sách:
+- Tài liệu Go chính thức:
+- Bài viết/video bổ sung:
 
-## Lich su cap nhat
-| Ngay | Cap nhat | Ghi chu |
+## Lịch sử cập nhật
+| Ngày | Cập nhật | Ghi chú |
 |---|---|---|
-|  | Khoi tao ghi chu |  |
+|  | Khởi tạo ghi chú |  |

@@ -1,30 +1,30 @@
-# Matthew A. Titmus - Cloud Native Go_ Building Reliable Services in Unreliable Environments-O'Reilly Media (2021) - Tai lieu hoc theo chuong
+# Matthew A. Titmus - Cloud Native Go_ Building Reliable Services in Unreliable Environments-O'Reilly Media (2021) - Tài liệu học theo chương
 
-Bo tai lieu nay tong hop ghi chu hoc tap cho sach **Matthew A. Titmus - Cloud Native Go_ Building Reliable Services in Unreliable Environments-O'Reilly Media (2021)** theo tung chuong, theo huong de doc, de day lai, va de mo rong cho nhom hoc.
+Bộ tài liệu này tổng hợp ghi chú học tập cho sách **Matthew A. Titmus - Cloud Native Go_ Building Reliable Services in Unreliable Environments-O'Reilly Media (2021)** theo từng chương, theo hướng dễ đọc, dễ dạy lại, và dễ mở rộng cho nhóm học.
 
-## Cach su dung
-- Moi thu muc chapter co mot `README.md` theo cung mot cau truc.
-- Nen dien theo thu tu: **Tom tat nhanh -> Ghi chu chi tiet -> Bai tap -> Tu danh gia**.
-- Ban co the dung chapter da hoc lam chuan trinh bay cho cac chapter tiep theo.
+## Cách sử dụng
+- Mỗi thư mục chapter có một `README.md` theo cùng một cấu trúc.
+- Nên điền theo thứ tự: **Tóm tắt nhanh -> Ghi chú chi tiết -> Bài tập -> Tự đánh giá**.
+- Bạn có thể dùng chapter đã học làm chuẩn trình bày cho các chapter tiếp theo.
 
-## Trinh soan thao de xuat
-- Neovim config ca nhan: [dangdat1111/nvim](https://github.com/dangdat1111/nvim)
-- Ghi chu cai dat nhanh: `README_EDITOR.md`
+## Trình soạn thảo đề xuất
+- Neovim config cá nhân: [dangdat1111/nvim](https://github.com/dangdat1111/nvim)
+- Ghi chú cài đặt nhanh: `README_EDITOR.md`
 
-## Danh sach chuong
+## Danh sách chương
 
-- [Chuong 01 - What Is a “Cloud Native” Application?](Chapter01-WhatIsACloudNativeApplication/README.md)
-- [Chuong 02 - Why Go Rules the Cloud Native World](Chapter02-WhyGoRulesTheCloudNativeWorld/README.md)
-- [Chuong 03 - Go Language Foundations](Chapter03-GoLanguageFoundations/README.md)
-- [Chuong 04 - Cloud Native Patterns](Chapter04-CloudNativePatterns/README.md)
-- [Chuong 05 - Building a Cloud Native Service](Chapter05-BuildingACloudNativeService/README.md)
-- [Chuong 06 - It’s All About Dependability](Chapter06-ItSAllAboutDependability/README.md)
-- [Chuong 07 - Scalability](Chapter07-Scalability/README.md)
-- [Chuong 08 - Loose Coupling](Chapter08-LooseCoupling/README.md)
-- [Chuong 09 - Resilience](Chapter09-Resilience/README.md)
-- [Chuong 10 - Manageability](Chapter10-Manageability/README.md)
-- [Chuong 11 - Observability](Chapter11-Observability/README.md)
+- [Chương 01 - What Is a “Cloud Native” Application?](Chapter01-WhatIsACloudNativeApplication/README.md)
+- [Chương 02 - Why Go Rules the Cloud Native World](Chapter02-WhyGoRulesTheCloudNativeWorld/README.md)
+- [Chương 03 - Go Language Foundations](Chapter03-GoLanguageFoundations/README.md)
+- [Chương 04 - Cloud Native Patterns](Chapter04-CloudNativePatterns/README.md)
+- [Chương 05 - Building a Cloud Native Service](Chapter05-BuildingACloudNativeService/README.md)
+- [Chương 06 - It’s All About Dependability](Chapter06-ItSAllAboutDependability/README.md)
+- [Chương 07 - Scalability](Chapter07-Scalability/README.md)
+- [Chương 08 - Loose Coupling](Chapter08-LooseCoupling/README.md)
+- [Chương 09 - Resilience](Chapter09-Resilience/README.md)
+- [Chương 10 - Manageability](Chapter10-Manageability/README.md)
+- [Chương 11 - Observability](Chapter11-Observability/README.md)
 
-## Quy uoc cap nhat
-- Moi lan hoc xong mot chuong, cap nhat muc **Nhat ky thuc hanh** va **Lich su cap nhat**.
-- Uu tien vi du chay duoc, co dau vao/dau ra ro rang, va neu loi thuong gap.
+## Quy ước cap nhat
+- Mỗi lần học xong một chương, cập nhật mục **Nhật ký thực hành** và **Lịch sử cập nhật**.
+- Ưu tiên ví dụ chạy được, có đầu vào/đầu ra rõ ràng, và nêu lỗi thường gặp.

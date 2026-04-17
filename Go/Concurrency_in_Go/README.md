@@ -1,25 +1,25 @@
-# Concurrency in Go - Tai lieu hoc theo chuong
+# Concurrency in Go - Tài liệu học theo chương
 
-Bo tai lieu nay tong hop ghi chu hoc tap cho sach **Concurrency in Go** theo tung chuong, theo huong de doc, de day lai, va de mo rong cho nhom hoc.
+Bộ tài liệu này tổng hợp ghi chú học tập cho sách **Concurrency in Go** theo từng chương, theo hướng dễ đọc, dễ dạy lại, và dễ mở rộng cho nhóm học.
 
-## Cach su dung
-- Moi thu muc chapter co mot `README.md` theo cung mot cau truc.
-- Nen dien theo thu tu: **Tom tat nhanh -> Ghi chu chi tiet -> Bai tap -> Tu danh gia**.
-- Ban co the dung chapter da hoc lam chuan trinh bay cho cac chapter tiep theo.
+## Cách sử dụng
+- Mỗi thư mục chapter có một `README.md` theo cùng một cấu trúc.
+- Nên điền theo thứ tự: **Tóm tắt nhanh -> Ghi chú chi tiết -> Bài tập -> Tự đánh giá**.
+- Bạn có thể dùng chapter đã học làm chuẩn trình bày cho các chapter tiếp theo.
 
-## Trinh soan thao de xuat
-- Neovim config ca nhan: [dangdat1111/nvim](https://github.com/dangdat1111/nvim)
-- Ghi chu cai dat nhanh: `README_EDITOR.md`
+## Trình soạn thảo đề xuất
+- Neovim config cá nhân: [dangdat1111/nvim](https://github.com/dangdat1111/nvim)
+- Ghi chú cài đặt nhanh: `README_EDITOR.md`
 
-## Danh sach chuong
+## Danh sách chương
 
-- [Chuong 01 - An Introduction to Concurrency](Chapter01-AnIntroductionToConcurrency/README.md)
-- [Chuong 02 - Modeling Your Code: Communicating Sequential Processes](Chapter02-ModelingYourCodeCommunicatingSequentialProcesses/README.md)
-- [Chuong 03 - Go’s Concurrency Building Blocks](Chapter03-GoSConcurrencyBuildingBlocks/README.md)
-- [Chuong 04 - Concurrency Patterns in Go](Chapter04-ConcurrencyPatternsInGo/README.md)
-- [Chuong 05 - Concurrency at Scale](Chapter05-ConcurrencyAtScale/README.md)
-- [Chuong 06 - Goroutines and the Go Runtime](Chapter06-GoroutinesAndTheGoRuntime/README.md)
+- [Chương 01 - An Introduction to Concurrency](Chapter01-AnIntroductionToConcurrency/README.md)
+- [Chương 02 - Modeling Your Code: Communicating Sequential Processes](Chapter02-ModelingYourCodeCommunicatingSequentialProcesses/README.md)
+- [Chương 03 - Go’s Concurrency Building Blocks](Chapter03-GoSConcurrencyBuildingBlocks/README.md)
+- [Chương 04 - Concurrency Patterns in Go](Chapter04-ConcurrencyPatternsInGo/README.md)
+- [Chương 05 - Concurrency at Scale](Chapter05-ConcurrencyAtScale/README.md)
+- [Chương 06 - Goroutines and the Go Runtime](Chapter06-GoroutinesAndTheGoRuntime/README.md)
 
-## Quy uoc cap nhat
-- Moi lan hoc xong mot chuong, cap nhat muc **Nhat ky thuc hanh** va **Lich su cap nhat**.
-- Uu tien vi du chay duoc, co dau vao/dau ra ro rang, va neu loi thuong gap.
+## Quy ước cap nhat
+- Mỗi lần học xong một chương, cập nhật mục **Nhật ký thực hành** và **Lịch sử cập nhật**.
+- Ưu tiên ví dụ chạy được, có đầu vào/đầu ra rõ ràng, và nêu lỗi thường gặp.

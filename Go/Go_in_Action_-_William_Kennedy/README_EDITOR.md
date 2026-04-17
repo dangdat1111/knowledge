@@ -1,36 +1,36 @@
-# Trinh soan thao (Neovim)
+# Trình soạn thảo (Neovim)
 
-Tai lieu nay dung chung cho bo ghi chu sach, voi cau hinh Neovim tu repo cua ban:
+Tài liệu này dùng chung cho bộ ghi chú sách, với cấu hình Neovim từ repo của bạn:
 
 - Repo: [https://github.com/dangdat1111/nvim](https://github.com/dangdat1111/nvim)
 
-## Muc dich
-- Chuan hoa moi truong soan thao khi hoc Go.
-- Giam khac biet cau hinh giua cac may.
-- De onboarding cho nguoi hoc moi.
+## Mục đích
+- Chuẩn hóa môi trường soạn thảo khi học Go.
+- Giảm khác biệt cấu hình giữa các máy.
+- Dễ onboarding cho người học mới.
 
-## Thiet lap nhanh
-1. Cai Neovim (khuyen nghi ban on dinh moi).
-2. Clone repo cau hinh:
+## Thiết lập nhanh
+1. Cài Neovim (khuyến nghị bản ổn định mới).
+2. Clone repo cấu hình:
 
 ```bash
 git clone https://github.com/dangdat1111/nvim ~/.config/nvim
 ```
 
-3. Mo Neovim de plugin tu cai lan dau:
+3. Mở Neovim để plugin tự cài lần đầu:
 
 ```bash
 nvim
 ```
 
-## Goi y plugin/tinh nang can cho Go
+## Gợi ý plugin/tính năng cần cho Go
 - LSP cho Go (gopls)
 - Formatter (`gofmt`)
-- Linter (`golangci-lint` neu dung)
+- Linter (`golangci-lint` nếu dùng)
 - Tree-sitter cho syntax highlight
-- Telescope de tim file/ky hieu nhanh
+- Telescope để tìm file/ký hiệu nhanh
 
-## Quy uoc khi viet tai lieu
-- Moi chapter cap nhat trong `ChapterXX-.../README.md`.
-- Uu tien vi du chay duoc va co dau vao/dau ra ro rang.
-- Luon cap nhat `Nhat ky thuc hanh` sau moi buoi hoc.
+## Quy ước khi viet tai lieu
+- Mỗi chapter cập nhật trong `ChapterXX-.../README.md`.
+- Ưu tiên ví dụ chạy được và có đầu vào/đầu ra rõ ràng.
+- Luôn cập nhật `Nhật ký thực hành` sau mỗi buổi học.
