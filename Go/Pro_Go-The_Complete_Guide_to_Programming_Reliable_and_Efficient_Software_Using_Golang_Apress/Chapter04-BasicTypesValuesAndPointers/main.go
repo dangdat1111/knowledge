@@ -17,7 +17,6 @@ func main() {
 	//const tax float32 = 27.50
 	//fmt.Println(price+tax)
 
-
 	//Go có những quy tắc nghiêm ngặt về kiểu dữ liệu và không thực hiện chuyển đổi kiểu tự động,
 	//điều này có thể làm phức tạp các tác vụ lập trình thông thường, như minh họa trong Danh sách 4-8.
 	//const quantity int = 2
@@ -38,7 +37,6 @@ func main() {
 	//)
 	//Mẫu này tạo ra một chuỗi các hằng số, mỗi hằng số được gán một giá trị số nguyên, bắt đầu từ số không.
 	//fmt.Println(Watersports, Soccer, Chess)
-
 
 	// Định nghĩa nhiều hằng số bằng một câu lệnh duy nhất
 	//const price, tax float32 = 275.00, 27.50
@@ -82,7 +80,6 @@ func main() {
 
 	//Using the Short Variables Syntax to Redefine Variables
 	//->Sử dụng cú pháp biến rút gọn để định nghĩa lại biến
-
 	// Lỗi: tax redeclared in this block
 	//price, tax, inStock := 275.00, 27.50, true
 	//var price2, tax = 200.00, 25.00
@@ -90,6 +87,30 @@ func main() {
 	// Cách làm đúng:
 	//price, tax , inStock := 275.00, 27.50, true
 	//price2, tax := 200.00, 25.00
+
+	//Using the Blank Identifier
+	//Sử dụng mã định danh trống
+	//price, tax, inStock, _ := 275.00, 27.50, true, true
+	//var _ = "Alice"
+	//Sử dụng "_" để tránh lỗi declared but not used ( Khai báo nhưng không sử dụng )
+
+	//Understanding Pointers
+	//first := 100 //-> first = 101
+	//second:= first //-> second = 100
+	//first++
+	//đoạn code trên tạo ra 2 biến -> Go sẽ copy giá trị hiện tại của biến first sau khi tạo biến second => 2 biến này độc lập với nhau
+	//==> mỗi biến tham chiếu tới 1 bộ nhớ riêng biệt
+
+	//Defining a Pointers
+ 	// Con trỏ là 1 biến có giá trị là 1 địa chỉ bộ nhớ
+	//first := 100
+	//var second *int = &first
+	// *int: pointer type
+	//first ++
+	first := 100
+	second := &first
+	first++
+	fmt.Println(*second)
 
 
 
