@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PostgreSQL — Transaction Internals (Deep Dive)</title>
+<script>
+  (function () {
+    const saved = localStorage.getItem('pgtx-theme');
+    const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', dark);
+  })();
+</script>
+<style>
+  :root {
+    --bg: #FAF9F5; --surface: #FFFFFF; --surface2: #F0EEE6;
+    --ink: #141413; --body: #3D3D3A; --muted: #87867F;
+    --line: #D1CFC5; --line-soft: #E6E3DA;
+    --clay: #D97757; --clay-soft: rgba(217,119,87,0.10);
+    --olive: #788C5D; --olive-soft: rgba(120,140,93,0.12);
+    --gold: #C9A45C; --gold-soft: rgba(201,164,92,0.14);
+    --blue: #5B7E96; --blue-soft: rgba(91,126,150,0.12);
+    --plum: #8A6D9E; --plum-soft: rgba(138,109,158,0.12);
+    --zone: rgba(20,20,19,0.022); --zone-line: #D1CFC5;
+    --serif: ui-serif, Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  html.dark {
+    --bg: #141413; --surface: #1F1F1D; --surface2: #2A2A28;
+    --ink: #FAF9F5; --body: #D1CFC5; --muted: #8E8D85;
+    --line: #3D3D3A; --line-soft: #2A2A28;
+    --clay: #E48A6E; --clay-soft: rgba(228,138,110,0.14);
+    --olive: #9DB07C; --olive-soft: rgba(157,176,124,0.16);
+    --gold: #D4B36F; --gold-soft: rgba(212,179,111,0.16);
+    --blue: #7FA3BC; --blue-soft: rgba(127,163,188,0.16);
+    --plum: #B197C4; --plum-soft: rgba(177,151,196,0.16);
+    --zone: rgba(250,249,245,0.03); --zone-line: #3D3D3A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--body); font-family: var(--sans);
+    -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  /* ── top bar ─────────────────────────────── */
+  .bar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 11px 20px; border-bottom: 1px solid var(--line-soft); flex: none;
+  }
+  .bar h1 { font-family: var(--serif); font-weight: 500; font-size: 18px; color: var(--ink); letter-spacing: -0.01em; }
+  .bar .sub { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .spacer { flex: 1; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.03em;
+    padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px;
+    background: transparent; color: var(--muted); cursor: pointer; transition: all .15s ease;
+  }
+  .chip:hover { color: var(--ink); border-color: var(--muted); }
+  .chip.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  #themeToggle {
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px;
+    background: transparent; color: var(--muted); cursor: pointer;
+  }
+  #themeToggle:hover { color: var(--ink); border-color: var(--muted); }
+
+  /* ── stage ───────────────────────────────── */
+  .stage { flex: 1; position: relative; min-height: 0; }
+  .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* zones */
+  .zone rect { fill: var(--zone); stroke: var(--zone-line); stroke-width: 1; stroke-dasharray: 5 5; }
+  .zone .ztitle { font-family: var(--mono); font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; fill: var(--muted); }
+  .zone .zsub { font-family: var(--mono); font-size: 10px; fill: var(--muted); opacity: 0.72; }
+  .zone.zA rect { stroke: var(--blue); }
+  .zone.zB rect { stroke: var(--clay); }
+  .zone.zC rect { stroke: var(--olive); }
+  .zone.zD rect { stroke: var(--gold); }
+  .zone.zE rect { stroke: var(--plum); }
+  .zone.zF rect { stroke: var(--muted); }
+
+  /* nodes */
+  .node { cursor: pointer; }
+  .node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; transition: stroke .15s ease, filter .15s ease; }
+  .node:hover rect { stroke: var(--muted); }
+  .node.sel rect { stroke: var(--clay) !important; stroke-width: 2.4; }
+  .node .t  { font-family: var(--sans); font-size: 13.5px; font-weight: 650; fill: var(--ink); pointer-events: none; }
+  .node .m  { font-family: var(--mono); font-size: 10.5px; fill: var(--muted); pointer-events: none; }
+  .node .k  { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; fill: var(--clay); pointer-events: none; }
+
+  .node.proc rect { fill: var(--blue-soft); stroke: var(--blue); }
+  .node.shm  rect { fill: var(--surface2); stroke: var(--clay); }
+  .node.mvcc rect { fill: var(--olive-soft); stroke: var(--olive); }
+  .node.slru rect { fill: var(--gold-soft); stroke: var(--gold); }
+  .node.wal  rect { fill: var(--plum-soft); stroke: var(--plum); }
+  .node.clean rect { fill: var(--surface2); stroke: var(--muted); }
+  .node.hero rect { stroke-width: 2; }
+
+  /* edges */
+  .edge { stroke: var(--muted); stroke-width: 1.5; fill: none; marker-end: url(#a-mut); transition: opacity .2s ease, stroke .2s ease; }
+  .edge.dash { stroke-dasharray: 5 4; opacity: 0.72; }
+  .edge.thin { stroke-width: 1.2; }
+  .elbl { font-family: var(--mono); font-size: 10px; fill: var(--muted); transition: opacity .2s ease; }
+
+  /* flow highlighting */
+  .stage.flowing .edge { opacity: 0.1; }
+  .stage.flowing .elbl { opacity: 0.1; }
+  .stage.flowing .node { opacity: 0.28; }
+  .stage.flowing .zone { opacity: 0.5; }
+  .stage.flowing .decor { opacity: 0.16; }
+  .stage.flowing .edge.lit {
+    opacity: 1; stroke: var(--clay); marker-end: url(#a-clay);
+    stroke-dasharray: 7 5; animation: march 0.9s linear infinite;
+  }
+  .stage.flowing .elbl.lit { opacity: 1; fill: var(--clay); }
+  .stage.flowing .node.lit { opacity: 1; }
+  .stage.flowing .node.lit rect { stroke: var(--clay); }
+  .stage.flowing .decor.lit { opacity: 1; }
+  @keyframes march { to { stroke-dashoffset: -12; } }
+  @media (prefers-reduced-motion: reduce) { .stage.flowing .edge.lit { animation: none; } }
+
+  /* decorations */
+  .decor text { pointer-events: none; }
+  /* snapshot ruler */
+  .rl-t   { font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; fill: var(--muted); }
+  .ruler-vis { fill: var(--olive-soft); stroke: var(--olive); stroke-width: 1; }
+  .ruler-mix { fill: var(--zone); stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+  .ruler-fut { fill: var(--surface2); stroke: var(--line); stroke-width: 1; }
+  .ruler-tick { stroke: var(--ink); stroke-width: 1.5; }
+  .ruler-xip { stroke: var(--clay); stroke-width: 2.5; }
+  .rl-in  { font-family: var(--mono); font-size: 9.5px; fill: var(--body); text-anchor: middle; }
+  .rl-lbl { font-family: var(--mono); font-size: 9px; fill: var(--muted); text-anchor: middle; }
+  /* mvcc tuple bits */
+  .mv-seg { stroke: var(--olive); stroke-width: 1.2; fill: var(--surface); }
+  .mv-hi  { fill: var(--olive-soft); }
+  .mv-t   { font-family: var(--mono); font-size: 10px; fill: var(--ink); text-anchor: middle; pointer-events: none; }
+
+  /* ── floating cards ──────────────────────── */
+  .card {
+    position: absolute;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 13px 15px; box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+  }
+  #detail { right: 16px; bottom: 16px; width: 344px; }
+  #detail h3 { font-family: var(--serif); font-weight: 500; font-size: 16px; color: var(--ink); margin-bottom: 2px; }
+  #detail .meta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+  #detail p { font-size: 12.5px; line-height: 1.55; }
+  #detail p code, #flowcap code { font-family: var(--mono); font-size: 11px; color: var(--clay); }
+  #flowcap { left: 16px; bottom: 16px; max-width: 480px; display: none; }
+  #flowcap.show { display: block; }
+  #flowcap .fname { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--clay); margin-bottom: 6px; }
+  #flowcap ol { margin-left: 18px; }
+  #flowcap li { font-size: 12px; line-height: 1.5; margin-bottom: 3px; }
+  .src { position: absolute; top: 10px; right: 16px; font-family: var(--mono); font-size: 10px; color: var(--muted); opacity: 0.8; }
+  .legend { position: absolute; left: 16px; top: 10px; display: flex; gap: 12px; flex-wrap: wrap; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; border: 1px solid var(--line); display: inline-block; }
+  .lg-A { background: var(--blue-soft); border-color: var(--blue); }
+  .lg-B { background: var(--surface2); border-color: var(--clay); }
+  .lg-C { background: var(--olive-soft); border-color: var(--olive); }
+  .lg-D { background: var(--gold-soft); border-color: var(--gold); }
+  .lg-E { background: var(--plum-soft); border-color: var(--plum); }
+  .lg-F { background: var(--surface2); border-color: var(--muted); }
+
+  @media (max-width: 900px) {
+    body { overflow: auto; }
+    .stage { min-height: 80vh; }
+    #detail { position: static; width: auto; margin: 10px 16px; }
+    #flowcap { position: static; margin: 0 16px 16px; }
+    .legend { position: static; margin: 8px 16px; }
+    .src { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div>
+    <h1>PostgreSQL — Transaction Internals</h1>
+    <div class="sub">XID · ProcArray · snapshot · MVCC visibility · CLOG · commit/WAL · vacuum</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="chips" id="chips">
+    <button class="chip on" data-flow="all">Toàn cảnh</button>
+    <button class="chip" data-flow="begin">BEGIN · VXID</button>
+    <button class="chip" data-flow="xid">Cấp XID</button>
+    <button class="chip" data-flow="snapshot">Snapshot</button>
+    <button class="chip" data-flow="visibility">Visibility</button>
+    <button class="chip" data-flow="isolation">Isolation</button>
+    <button class="chip" data-flow="commit">COMMIT</button>
+    <button class="chip" data-flow="abort">ROLLBACK</button>
+    <button class="chip" data-flow="subxact">Savepoint</button>
+    <button class="chip" data-flow="vacuum">Vacuum · Freeze</button>
+  </div>
+  <button id="themeToggle">Theme</button>
+</div>
+
+<div class="stage" id="stage">
+<svg viewBox="0 0 1480 1140" preserveAspectRatio="xMidYMid meet" role="img" aria-label="PostgreSQL transaction internals deep-dive diagram">
+  <defs>
+    <marker id="a-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" style="fill: var(--muted)"/>
+    </marker>
+    <marker id="a-clay" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" style="fill: var(--clay)"/>
+    </marker>
+  </defs>
+
+  <!-- ── zones ─────────────────────────────── -->
+  <g class="zone zA" id="z-life">
+    <rect x="24" y="96" width="300" height="548" rx="16"/>
+    <text class="ztitle" x="44" y="126">1 · Transaction Lifecycle</text>
+    <text class="zsub" x="44" y="144">backend state machine</text>
+  </g>
+  <g class="zone zB" id="z-shared">
+    <rect x="344" y="96" width="306" height="548" rx="16"/>
+    <text class="ztitle" x="364" y="126">2 · ProcArray &amp; XID</text>
+    <text class="zsub" x="364" y="144">shared memory · running txns</text>
+  </g>
+  <g class="zone zC" id="z-mvcc">
+    <rect x="670" y="96" width="396" height="548" rx="16"/>
+    <text class="ztitle" x="690" y="126">3 · MVCC — Snapshot &amp; Visibility</text>
+    <text class="zsub" x="690" y="144">who sees which row version</text>
+  </g>
+  <g class="zone zD" id="z-slru">
+    <rect x="1086" y="96" width="370" height="250" rx="16"/>
+    <text class="ztitle" x="1106" y="126">4 · Commit Status — CLOG / SLRU</text>
+  </g>
+  <g class="zone zE" id="z-wal">
+    <rect x="1086" y="366" width="370" height="278" rx="16"/>
+    <text class="ztitle" x="1106" y="396">5 · WAL &amp; Durability</text>
+  </g>
+  <g class="zone zF" id="z-clean">
+    <rect x="344" y="704" width="1112" height="384" rx="16"/>
+    <text class="ztitle" x="364" y="734">6 · Cleanup — Vacuum · Freeze · Wraparound</text>
+    <text class="zsub" x="364" y="752">reclaiming dead versions &amp; guarding the XID space</text>
+  </g>
+
+  <!-- ── edges ─────────────────────────────── -->
+  <!-- lifecycle + xid -->
+  <path class="edge" id="e-cli-state"  d="M174,222 L174,238"/>
+  <path class="edge" id="e-state-vxid" d="M174,328 L174,344"/>
+  <path class="edge" id="e-vxid-xid"   d="M304,384 C 336,344 340,224 364,200"/>
+  <path class="edge" id="e-xid-pa"     d="M497,234 L497,250"/>
+  <path class="edge dash" id="e-sub-xid" d="M304,548 C 340,470 340,250 364,206"/>
+  <path class="edge dash thin" id="e-sub-subtrans" d="M304,566 C 660,650 980,330 1106,290"/>
+  <!-- snapshot -->
+  <path class="edge" id="e-pa-snap"    d="M497,400 L497,416"/>
+  <path class="edge" id="e-snap-snapshot" d="M630,448 C 662,400 664,242 690,206"/>
+  <path class="edge" id="e-snapshot-vis"  d="M690,232 C 654,320 654,400 690,446"/>
+  <path class="edge" id="e-tuple-vis"  d="M868,392 L868,408"/>
+  <path class="edge" id="e-vis-clog"   d="M1046,448 C 1076,410 1082,240 1106,198"/>
+  <path class="edge dash" id="e-vis-hint" d="M1046,456 C 1080,418 1080,362 1046,336"/>
+  <path class="edge dash" id="e-iso-snap" d="M700,540 C 656,514 646,492 630,478"/>
+  <!-- commit -->
+  <path class="edge hero" id="e-state-wal" d="M304,262 C 700,140 1000,150 1106,414"/>
+  <path class="edge" id="e-wal-clog"   d="M1271,410 L1271,234"/>
+  <path class="edge" id="e-wal-sync"   d="M1271,506 L1271,520"/>
+  <path class="edge dash" id="e-wal-pa" d="M1106,462 C 850,472 700,362 632,338"/>
+  <path class="edge" id="e-state-lock" d="M304,300 C 352,404 352,504 364,548"/>
+  <path class="edge dash" id="e-state-2pc" d="M304,256 C 720,118 1060,150 1330,246"/>
+  <!-- cleanup -->
+  <path class="edge" id="e-pa-oldest"  d="M630,344 C 652,540 652,732 664,784"/>
+  <path class="edge" id="e-oldest-vac" d="M664,830 L690,830"/>
+  <path class="edge" id="e-vac-tuple"  d="M1010,772 C 1082,650 1082,420 1046,394"/>
+  <path class="edge" id="e-vac-freeze" d="M1030,830 L1056,830"/>
+  <path class="edge" id="e-freeze-clog" d="M1230,772 C 1460,520 1462,300 1436,202"/>
+  <path class="edge dash" id="e-wrap-vac" d="M1276,872 C 1080,946 850,946 860,890"/>
+  <path class="edge dash thin" id="e-freeze-trunc" d="M1150,888 C 1110,930 1070,948 1030,948"/>
+
+  <!-- edge labels -->
+  <text class="elbl" data-e="e-vxid-xid"   x="332" y="286" text-anchor="middle">first write → assign XID</text>
+  <text class="elbl" data-e="e-xid-pa"     x="506" y="246">advertise xid</text>
+  <text class="elbl" data-e="e-sub-xid"    x="316" y="360">sub-XID</text>
+  <text class="elbl" data-e="e-pa-snap"    x="506" y="412">scan running xids</text>
+  <text class="elbl" data-e="e-snap-snapshot" x="612" y="330" text-anchor="middle">build xmin/xmax/xip</text>
+  <text class="elbl" data-e="e-snapshot-vis"  x="636" y="356" text-anchor="middle">compare</text>
+  <text class="elbl" data-e="e-tuple-vis"  x="876" y="404">read version</text>
+  <text class="elbl" data-e="e-vis-clog"   x="1064" y="330" text-anchor="middle">committed?</text>
+  <text class="elbl" data-e="e-vis-hint"   x="1096" y="398" text-anchor="middle">set hint bits</text>
+  <text class="elbl" data-e="e-iso-snap"   x="660" y="512" text-anchor="middle">when to snapshot</text>
+  <text class="elbl" data-e="e-state-wal"  x="628" y="139" text-anchor="middle">COMMIT →</text>
+  <text class="elbl" data-e="e-wal-clog"   x="1280" y="360">mark committed</text>
+  <text class="elbl" data-e="e-wal-sync"   x="1280" y="516">durability?</text>
+  <text class="elbl" data-e="e-wal-pa"     x="860" y="392" text-anchor="middle">clear xid from ProcArray</text>
+  <text class="elbl" data-e="e-state-lock" x="360" y="452" text-anchor="end">release at commit</text>
+  <text class="elbl" data-e="e-state-2pc"  x="820" y="120" text-anchor="middle">PREPARE TRANSACTION</text>
+  <text class="elbl" data-e="e-pa-oldest"  x="600" y="600" text-anchor="middle">xmin horizon</text>
+  <text class="elbl" data-e="e-oldest-vac" x="677" y="822" text-anchor="middle">dead if xmax &lt; horizon</text>
+  <text class="elbl" data-e="e-vac-tuple"  x="1092" y="560" text-anchor="middle">remove dead / prune</text>
+  <text class="elbl" data-e="e-vac-freeze" x="1043" y="822" text-anchor="middle">freeze</text>
+  <text class="elbl" data-e="e-freeze-clog" x="1452" y="470" text-anchor="middle">truncate CLOG</text>
+  <text class="elbl" data-e="e-wrap-vac"   x="1060" y="962" text-anchor="middle">force aggressive freeze</text>
+
+  <!-- ── nodes: lifecycle ──────────────────── -->
+  <g class="node proc" data-k="client">
+    <rect x="44" y="150" width="260" height="72" rx="10"/>
+    <text class="t" x="62" y="180">Client — SQL transaction</text>
+    <text class="m" x="62" y="202">BEGIN · SAVEPOINT · COMMIT · ROLLBACK</text>
+  </g>
+  <g class="node proc" data-k="txnstate">
+    <rect x="44" y="238" width="260" height="90" rx="10"/>
+    <text class="t" x="62" y="266">TransactionState stack</text>
+    <text class="m" x="62" y="288">TBLOCK_* : DEFAULT → STARTED</text>
+    <text class="m" x="62" y="306">→ INPROGRESS → END / ABORT</text>
+  </g>
+  <g class="node proc" data-k="vxid">
+    <rect x="44" y="344" width="260" height="80" rx="10"/>
+    <text class="t" x="62" y="372">Virtual XID (VXID)</text>
+    <text class="m" x="62" y="394">backendId + localXid</text>
+    <text class="m" x="62" y="412">lazy: no real XID until a write</text>
+  </g>
+  <g class="node proc" data-k="cid">
+    <rect x="44" y="440" width="260" height="64" rx="10"/>
+    <text class="t" x="62" y="468">CommandCounterId (CID)</text>
+    <text class="m" x="62" y="490">cmin / cmax · intra-txn visibility</text>
+  </g>
+  <g class="node proc" data-k="subxact">
+    <rect x="44" y="520" width="260" height="96" rx="10"/>
+    <text class="t" x="62" y="548">Savepoint / Subtransaction</text>
+    <text class="m" x="62" y="570">sub-XID per savepoint</text>
+    <text class="m" x="62" y="588">ROLLBACK TO savepoint</text>
+  </g>
+
+  <!-- ── nodes: ProcArray & XID ────────────── -->
+  <g class="node shm" data-k="xidcounter">
+    <rect x="364" y="150" width="266" height="84" rx="10"/>
+    <text class="t" x="382" y="180">XID Counter · nextXid</text>
+    <text class="m" x="382" y="202">GetNewTransactionId()</text>
+    <text class="m" x="382" y="220">32-bit · monotonic · wraps</text>
+  </g>
+  <g class="node shm hero" data-k="procarray">
+    <rect x="364" y="250" width="266" height="150" rx="10"/>
+    <text class="t" x="382" y="278">ProcArray</text>
+    <text class="m" x="382" y="300">PGPROC + PGXACT / backend</text>
+    <text class="m" x="382" y="318">each advertises xid + xmin</text>
+    <text class="m" x="382" y="336">= the set of in-progress txns</text>
+    <text class="k" x="382" y="362">source of every snapshot</text>
+  </g>
+  <g class="node shm" data-k="snapbuild">
+    <rect x="364" y="416" width="266" height="80" rx="10"/>
+    <text class="t" x="382" y="444">GetSnapshotData()</text>
+    <text class="m" x="382" y="466">scan ProcArray → snapshot</text>
+    <text class="m" x="382" y="484">also computes xmin horizon</text>
+  </g>
+  <g class="node shm" data-k="locktable">
+    <rect x="364" y="512" width="266" height="100" rx="10"/>
+    <text class="t" x="382" y="540">Lock Table</text>
+    <text class="m" x="382" y="562">heavyweight — held to commit</text>
+    <text class="m" x="382" y="580">predicate SIReadLock (SSI)</text>
+    <text class="m" x="382" y="598">row lock lives in tuple xmax</text>
+  </g>
+
+  <!-- ── nodes: MVCC visibility ────────────── -->
+  <g class="node mvcc" data-k="snapshot">
+    <rect x="690" y="150" width="356" height="96" rx="10"/>
+    <text class="t" x="708" y="180">Snapshot</text>
+    <text class="m" x="708" y="202">xmin · xmax · xip[] (in-progress)</text>
+    <text class="m" x="708" y="220">curcid · taken per stmt or per txn</text>
+  </g>
+  <g class="node mvcc hero" data-k="tuple">
+    <rect x="690" y="262" width="356" height="130" rx="10"/>
+    <text class="t" x="708" y="290">Heap Tuple header (MVCC)</text>
+    <text class="m" x="708" y="312">t_xmin · t_xmax · t_cid · t_ctid</text>
+    <text class="m" x="708" y="330">t_infomask — hint bits</text>
+  </g>
+  <g class="node mvcc" data-k="visibility">
+    <rect x="690" y="408" width="356" height="92" rx="10"/>
+    <text class="t" x="708" y="436">HeapTupleSatisfiesMVCC()</text>
+    <text class="m" x="708" y="458">xmin committed &amp; visible in snapshot?</text>
+    <text class="m" x="708" y="476">xmax invalid or not-yet-committed?</text>
+  </g>
+  <g class="node mvcc" data-k="isolation">
+    <rect x="690" y="512" width="356" height="100" rx="10"/>
+    <text class="t" x="708" y="540">Isolation Levels</text>
+    <text class="m" x="708" y="562">Read Committed — snapshot / statement</text>
+    <text class="m" x="708" y="580">Repeatable Read / Serializable — / txn</text>
+    <text class="m" x="708" y="598">Serializable adds SSI predicate locks</text>
+  </g>
+
+  <!-- ── nodes: commit status (SLRU) ───────── -->
+  <g class="node slru hero" data-k="clog">
+    <rect x="1106" y="142" width="330" height="92" rx="10"/>
+    <text class="t" x="1124" y="170">CLOG · pg_xact</text>
+    <text class="m" x="1124" y="192">2 bits / XID:</text>
+    <text class="m" x="1124" y="210">in-progress · committed · aborted · sub</text>
+    <text class="k" x="1124" y="228">SLRU cached</text>
+  </g>
+  <g class="node slru" data-k="subtrans">
+    <rect x="1106" y="246" width="158" height="84" rx="10"/>
+    <text class="t" x="1124" y="274">pg_subtrans</text>
+    <text class="m" x="1124" y="296">sub-XID →</text>
+    <text class="m" x="1124" y="314">parent XID</text>
+  </g>
+  <g class="node slru" data-k="twophase">
+    <rect x="1278" y="246" width="158" height="84" rx="10"/>
+    <text class="t" x="1296" y="274">pg_twophase</text>
+    <text class="m" x="1296" y="296">PREPARE</text>
+    <text class="m" x="1296" y="314">TRANSACTION (2PC)</text>
+  </g>
+
+  <!-- ── nodes: WAL & durability ───────────── -->
+  <g class="node wal" data-k="walcommit">
+    <rect x="1106" y="410" width="330" height="96" rx="10"/>
+    <text class="t" x="1124" y="438">COMMIT WAL record</text>
+    <text class="m" x="1124" y="460">XLOG_XACT_COMMIT · gets an LSN</text>
+    <text class="m" x="1124" y="478">flush WAL up to the commit LSN</text>
+  </g>
+  <g class="node wal" data-k="synccommit">
+    <rect x="1106" y="520" width="330" height="64" rx="10"/>
+    <text class="t" x="1124" y="548">synchronous_commit</text>
+    <text class="m" x="1124" y="570">on: fsync before ack · off: async</text>
+  </g>
+  <g class="node wal" data-k="lsn">
+    <rect x="1106" y="598" width="330" height="40" rx="10"/>
+    <text class="t" x="1124" y="623">LSN — Log Sequence Number</text>
+  </g>
+
+  <!-- ── nodes: cleanup ────────────────────── -->
+  <g class="node clean" data-k="oldestxmin">
+    <rect x="364" y="772" width="300" height="116" rx="10"/>
+    <text class="t" x="382" y="800">OldestXmin — xmin horizon</text>
+    <text class="m" x="382" y="822">min(xmin) across ProcArray</text>
+    <text class="m" x="382" y="840">+ replication slots / prepared</text>
+    <text class="m" x="382" y="858">tuple dead if xmax &lt; horizon</text>
+  </g>
+  <g class="node clean hero" data-k="vacuum">
+    <rect x="690" y="772" width="340" height="116" rx="10"/>
+    <text class="t" x="708" y="800">VACUUM</text>
+    <text class="m" x="708" y="822">remove dead tuples (xmax committed)</text>
+    <text class="m" x="708" y="840">prune HOT chains · update VM/FSM</text>
+    <text class="m" x="708" y="858">advance relfrozenxid</text>
+  </g>
+  <g class="node clean" data-k="freeze">
+    <rect x="1056" y="772" width="196" height="116" rx="10"/>
+    <text class="t" x="1074" y="800">Freeze</text>
+    <text class="m" x="1074" y="822">old xmin → FrozenXID</text>
+    <text class="m" x="1074" y="840">in t_infomask</text>
+    <text class="m" x="1074" y="858">no CLOG lookup needed</text>
+  </g>
+  <g class="node clean" data-k="wraparound">
+    <rect x="1276" y="772" width="180" height="116" rx="10"/>
+    <text class="t" x="1294" y="800">XID Wraparound</text>
+    <text class="m" x="1294" y="822">32-bit ≈ 2B txns</text>
+    <text class="m" x="1294" y="840">aggressive autovacuum</text>
+    <text class="m" x="1294" y="858">guards against data loss</text>
+  </g>
+  <g class="node clean" data-k="specialxid">
+    <rect x="364" y="912" width="300" height="80" rx="10"/>
+    <text class="t" x="382" y="940">Special XIDs</text>
+    <text class="m" x="382" y="962">0 Invalid · 1 Bootstrap</text>
+    <text class="m" x="382" y="980">2 Frozen · 3 FirstNormal</text>
+  </g>
+  <g class="node clean" data-k="clogtrunc">
+    <rect x="690" y="912" width="340" height="80" rx="10"/>
+    <text class="t" x="708" y="940">CLOG / subtrans truncation</text>
+    <text class="m" x="708" y="962">old status files removed</text>
+    <text class="m" x="708" y="980">once relfrozenxid advances</text>
+  </g>
+
+  <!-- ── decor: snapshot visibility ruler ── -->
+  <g class="decor" id="ruler">
+    <text class="rl-t" x="390" y="661">Snapshot visibility · XID axis →</text>
+    <rect class="ruler-vis" x="390"  y="666" width="400" height="18"/>
+    <rect class="ruler-mix" x="790"  y="666" width="320" height="18"/>
+    <rect class="ruler-fut" x="1110" y="666" width="320" height="18"/>
+    <text class="rl-in" x="590"  y="679">xid &lt; xmin → VISIBLE</text>
+    <text class="rl-in" x="950"  y="679">xmin ≤ xid &lt; xmax → check xip[]</text>
+    <text class="rl-in" x="1270" y="679">xid ≥ xmax → INVISIBLE</text>
+    <line class="ruler-tick" x1="790"  y1="660" x2="790"  y2="692"/>
+    <line class="ruler-tick" x1="1110" y1="660" x2="1110" y2="692"/>
+    <line class="ruler-xip" x1="852" y1="668" x2="852" y2="682"/>
+    <line class="ruler-xip" x1="944" y1="668" x2="944" y2="682"/>
+    <line class="ruler-xip" x1="1036" y1="668" x2="1036" y2="682"/>
+    <text class="rl-lbl" x="790"  y="700">xmin</text>
+    <text class="rl-lbl" x="1110" y="700">xmax = nextXid</text>
+    <text class="rl-lbl" x="944"  y="700">xip[] (đang chạy → invisible)</text>
+  </g>
+
+  <!-- ── decor: MVCC tuple header bits (inside tuple node) ── -->
+  <g class="decor" id="tuplebits">
+    <rect class="mv-seg mv-hi" x="708" y="348" width="70" height="26"/>
+    <rect class="mv-seg mv-hi" x="778" y="348" width="70" height="26"/>
+    <rect class="mv-seg" x="848" y="348" width="54" height="26"/>
+    <rect class="mv-seg" x="902" y="348" width="70" height="26"/>
+    <rect class="mv-seg" x="972" y="348" width="66" height="26"/>
+    <text class="mv-t" x="743"  y="365">xmin</text>
+    <text class="mv-t" x="813"  y="365">xmax</text>
+    <text class="mv-t" x="875"  y="365">cid</text>
+    <text class="mv-t" x="937"  y="365">ctid</text>
+    <text class="mv-t" x="1005" y="365">imask</text>
+  </g>
+</svg>
+
+  <div class="src">PostgreSQL 16 · transaction subsystem</div>
+
+  <div class="legend">
+    <span><i class="lg-A"></i>Lifecycle</span>
+    <span><i class="lg-B"></i>ProcArray/XID</span>
+    <span><i class="lg-C"></i>MVCC</span>
+    <span><i class="lg-D"></i>Commit log</span>
+    <span><i class="lg-E"></i>WAL/Durability</span>
+    <span><i class="lg-F"></i>Cleanup</span>
+  </div>
+
+  <div class="card" id="flowcap">
+    <div class="fname" id="f-name"></div>
+    <ol id="f-steps"></ol>
+  </div>
+
+  <div class="card" id="detail">
+    <h3 id="d-title">Bấm vào bất kỳ khối nào</h3>
+    <div class="meta" id="d-meta">node detail</div>
+    <p id="d-body">Mọi khối đều bấm được để xem chi tiết. Các chip phía trên tô sáng &amp; animate từng giai đoạn vòng đời transaction — BEGIN/VXID, cấp XID, dựng snapshot, kiểm tra visibility (MVCC), isolation levels, COMMIT, ROLLBACK, savepoint và vacuum/freeze/wraparound.</p>
+  </div>
+</div>
+
+<script>
+const DETAIL = {
+  client:     { t:"Client — SQL transaction", m:"lifecycle · driver", b:"Ứng dụng phát lệnh <code>BEGIN</code> / <code>SAVEPOINT</code> / <code>COMMIT</code> / <code>ROLLBACK</code>. Nếu không có <code>BEGIN</code>, mỗi câu lệnh là một transaction ngầm (autocommit)." },
+  txnstate:   { t:"TransactionState stack", m:"lifecycle · TBLOCK_*", b:"Máy trạng thái transaction trong backend. Đi qua các trạng thái <code>TBLOCK_DEFAULT → STARTED → INPROGRESS → END</code> (hoặc <code>ABORT</code>). Savepoint đẩy một khung con lên stack. Đây là nơi COMMIT/ROLLBACK được điều phối." },
+  vxid:       { t:"Virtual XID (VXID)", m:"lifecycle · lazy XID", b:"Mỗi backend có VXID = <code>backendId + localXid</code>, cấp ngay khi transaction bắt đầu. Transaction <b>chỉ đọc</b> dùng VXID và <b>không tốn XID thật</b> — tiết kiệm không gian XID 32-bit và giảm áp lực wraparound." },
+  cid:        { t:"CommandCounterId (CID)", m:"lifecycle · intra-txn", b:"Đếm các lệnh trong cùng một transaction (<code>cmin</code>/<code>cmax</code> trên tuple). Cho phép lệnh sau thấy thay đổi của lệnh trước trong cùng txn, nhưng lệnh hiện tại không thấy chính nó (tránh Halloween problem). Tăng qua <code>CommandCounterIncrement()</code>." },
+  subxact:    { t:"Savepoint / Subtransaction", m:"lifecycle · sub-XID", b:"<code>SAVEPOINT</code> tạo một subtransaction với <b>sub-XID</b> riêng. <code>ROLLBACK TO</code> chỉ huỷ phần việc sau savepoint. Subxact commit/abort độc lập, nhưng chỉ thực sự bền vững khi <b>parent</b> commit." },
+  xidcounter: { t:"XID Counter · nextXid", m:"shared mem · allocator", b:"Bộ đếm toàn cục trong shared memory. Lệnh ghi đầu tiên gọi <code>GetNewTransactionId()</code> để lấy XID kế tiếp và tăng <code>nextXid</code>. XID là 32-bit, <b>đơn điệu</b> và sẽ <b>wrap</b> — nền tảng cho freeze/wraparound." },
+  procarray:  { t:"ProcArray", m:"shared mem · running txns", b:"Mảng <code>PGPROC</code>/<code>PGXACT</code>, một mục cho mỗi backend. Mỗi backend công khai <b>xid</b> và <b>xmin</b> của mình tại đây. Đây là <b>nguồn duy nhất</b> để dựng snapshot và tính xmin horizon — trái tim của MVCC." },
+  snapbuild:  { t:"GetSnapshotData()", m:"shared mem · snapshot", b:"Quét ProcArray để chụp lại tập transaction đang chạy: <code>xmin</code> = xid nhỏ nhất còn chạy, <code>xmax</code> = <code>nextXid</code>, <code>xip[]</code> = danh sách xid đang chạy. Cũng dùng để tính OldestXmin cho vacuum." },
+  locktable:  { t:"Lock Table", m:"shared mem · locks", b:"Heavyweight lock (table/row/…) được <b>giữ tới khi commit/abort</b>. Row lock nhẹ thường lưu ngay trong <code>t_xmax</code> + infomask của tuple, không tốn slot lock. Serializable thêm <b>SIReadLock</b> (predicate) để phát hiện anomaly." },
+  snapshot:   { t:"Snapshot", m:"MVCC · visibility set", b:"Ảnh chụp thời điểm: <code>{xmin, xmax, xip[]}</code>. Quy tắc: xid &lt; xmin → đã kết thúc; xid ≥ xmax → chưa bắt đầu (không thấy); trong khoảng → tra <code>xip[]</code>. Read Committed chụp mỗi câu lệnh; RR/Serializable chụp một lần cho cả txn." },
+  tuple:      { t:"Heap Tuple header (MVCC)", m:"MVCC · row version", b:"Mỗi phiên bản hàng mang <code>t_xmin</code> (txn tạo), <code>t_xmax</code> (txn xoá/khoá), <code>t_cid</code>, <code>t_ctid</code> (trỏ tới phiên bản mới), và <code>t_infomask</code> (hint bits). UPDATE tạo phiên bản mới và set xmax cho bản cũ — <b>không ghi đè</b>." },
+  visibility: { t:"HeapTupleSatisfiesMVCC()", m:"MVCC · visibility fn", b:"Với mỗi tuple: xmin đã commit và hiển thị trong snapshot? xmax rỗng hoặc chưa commit? Nếu cần, hỏi <b>CLOG</b> trạng thái commit của xmin/xmax, rồi <b>ghi hint bit</b> vào tuple để lần sau khỏi tra lại." },
+  isolation:  { t:"Isolation Levels", m:"MVCC · anomalies", b:"<b>Read Committed</b>: snapshot mới mỗi câu lệnh — thấy dữ liệu vừa commit. <b>Repeatable Read</b>: snapshot cố định cả txn — nhất quán, có thể lỗi serialization. <b>Serializable (SSI)</b>: thêm predicate lock để đảm bảo tương đương thực thi tuần tự." },
+  clog:       { t:"CLOG · pg_xact", m:"SLRU · commit status", b:"Commit Log: <b>2 bit</b> trạng thái cho mỗi XID — in-progress / committed / aborted / sub-committed. Được cache qua SLRU. <code>TransactionIdDidCommit()</code> đọc ở đây; MVCC dựa vào nó để quyết định visibility." },
+  subtrans:   { t:"pg_subtrans", m:"SLRU · subxact map", b:"Ánh xạ <b>sub-XID → parent XID</b>. Khi kiểm tra visibility một tuple do subxact tạo, Postgres lần theo đây để biết transaction cha, và trạng thái cha mới quyết định." },
+  twophase:   { t:"pg_twophase", m:"SLRU · 2PC", b:"<code>PREPARE TRANSACTION</code> ghi trạng thái transaction đã chuẩn bị xuống đây để tồn tại qua crash/restart, chờ <code>COMMIT PREPARED</code> / <code>ROLLBACK PREPARED</code>. Nền tảng cho distributed transaction." },
+  walcommit:  { t:"COMMIT WAL record", m:"WAL · durability", b:"<code>RecordTransactionCommit()</code> ghi bản ghi <code>XLOG_XACT_COMMIT</code> (kèm subxids, invalidations) và nhận một <b>LSN</b>. WAL phải được flush tới LSN này <b>trước</b> khi báo commit thành công — đảm bảo durability (D trong ACID)." },
+  synccommit: { t:"synchronous_commit", m:"WAL · sync vs async", b:"<b>on</b>: fsync WAL rồi mới trả lời client (không mất dữ liệu đã báo commit). <b>off</b>: trả lời ngay, WAL flush sau — nhanh hơn nhưng có thể mất vài giao dịch cuối khi crash (không hỏng dữ liệu, chỉ mất bền vững)." },
+  lsn:        { t:"LSN", m:"WAL · log position", b:"Log Sequence Number — địa chỉ byte của một bản ghi trong WAL. Commit chờ WAL được flush tới đúng LSN của mình. Replica cũng dùng LSN để đồng bộ." },
+  oldestxmin: { t:"OldestXmin — xmin horizon", m:"cleanup · GC horizon", b:"XID nhỏ nhất mà <b>còn</b> có snapshot cần thấy — tính từ ProcArray, cộng replication slot và prepared txn. Một tuple chết chỉ được thu hồi khi <code>xmax</code> đã commit và &lt; OldestXmin (không ai còn thấy)." },
+  vacuum:     { t:"VACUUM", m:"cleanup · reclaim", b:"Quét bảng thu hồi <b>dead tuple</b>, cắt HOT chain, cập nhật Visibility Map &amp; FSM, và <b>freeze</b> các xid cũ để đẩy <code>relfrozenxid</code> tiến lên. Autovacuum chạy tự động theo ngưỡng dead tuple và tuổi XID." },
+  freeze:     { t:"Freeze", m:"cleanup · anti-wraparound", b:"Đổi <code>t_xmin</code> rất cũ thành <b>FrozenXID</b> (đánh dấu trong t_infomask): tuple luôn hiển thị và <b>không cần tra CLOG</b> nữa. Cho phép cắt bỏ (truncate) phần CLOG/subtrans cũ và tránh wraparound." },
+  wraparound: { t:"XID Wraparound", m:"cleanup · safety", b:"XID chỉ 32-bit (~2 tỷ). Nếu tuổi XID tiến quá gần vòng, các tuple cũ có thể bị hiểu nhầm là 'tương lai' và biến mất. Autovacuum <b>aggressive</b> buộc freeze trước ngưỡng; nếu nguy hiểm, hệ thống chuyển read-only để bảo vệ dữ liệu." },
+  specialxid: { t:"Special XIDs", m:"reserved values", b:"<code>0</code> InvalidTransactionId · <code>1</code> BootstrapXID · <code>2</code> FrozenTransactionId · <code>3</code> FirstNormalTransactionId. XID người dùng bắt đầu từ 3; giá trị nhỏ dành cho hệ thống và tuple đã freeze." },
+  clogtrunc:  { t:"CLOG / subtrans truncation", m:"cleanup · space", b:"Khi <code>relfrozenxid</code> nhỏ nhất toàn cụm tiến lên (nhờ freeze), Postgres cắt bỏ các file trạng thái <code>pg_xact</code>/<code>pg_subtrans</code> cũ hơn — giải phóng đĩa và giữ SLRU gọn." },
+};
+
+const FLOWS = {
+  begin: {
+    name: "BEGIN — cấp Virtual XID (lazy)",
+    edges: ["e-cli-state","e-state-vxid"], nodes: ["client","txnstate","vxid"], decor: [],
+    steps: ["<code>BEGIN</code> dựng một khung TransactionState (<code>TBLOCK_BEGIN → INPROGRESS</code>).","Cấp ngay <b>Virtual XID</b> = backendId + localXid.","Transaction <b>chỉ đọc</b> dừng ở đây — chưa tốn XID thật, không xuất hiện như 'đang ghi' trong ProcArray."]
+  },
+  xid: {
+    name: "Cấp XID thật — khi có lệnh ghi đầu tiên",
+    edges: ["e-vxid-xid","e-xid-pa"], nodes: ["vxid","xidcounter","procarray"], decor: [],
+    steps: ["Lệnh ghi đầu tiên gọi <code>GetNewTransactionId()</code>.","Lấy <code>nextXid</code> và tăng bộ đếm — XID 32-bit, đơn điệu.","Backend ghi xid vào <code>PGXACT</code> của mình trong <b>ProcArray</b> để công khai là 'đang chạy'."]
+  },
+  snapshot: {
+    name: "Snapshot — chụp tập transaction đang chạy",
+    edges: ["e-pa-snap","e-snap-snapshot","e-iso-snap"], nodes: ["procarray","snapbuild","snapshot","isolation"], decor: ["ruler"],
+    steps: ["<code>GetSnapshotData()</code> quét ProcArray.","<code>xmin</code> = xid nhỏ nhất đang chạy · <code>xmax</code> = nextXid · <code>xip[]</code> = các xid đang chạy.","Read Committed lấy snapshot <b>mỗi câu lệnh</b>; Repeatable Read / Serializable lấy <b>một lần</b> cho cả txn."]
+  },
+  visibility: {
+    name: "Visibility — HeapTupleSatisfiesMVCC",
+    edges: ["e-snapshot-vis","e-tuple-vis","e-vis-clog","e-vis-hint"], nodes: ["snapshot","tuple","visibility","clog"], decor: ["ruler","tuplebits"],
+    steps: ["So <code>t_xmin</code>/<code>t_xmax</code> của tuple với snapshot.","xid &lt; xmin → xong · ≥ xmax → không thấy · ở giữa → tra <code>xip[]</code>.","Nếu chưa chắc, hỏi <b>CLOG</b> xem xid đã commit chưa.","Ghi <b>hint bit</b> vào tuple để lần đọc sau khỏi tra CLOG."]
+  },
+  isolation: {
+    name: "Isolation Levels — thời điểm & phạm vi snapshot",
+    edges: ["e-iso-snap","e-snap-snapshot"], nodes: ["isolation","snapbuild","snapshot"], decor: ["ruler"],
+    steps: ["<b>Read Committed</b>: snapshot mới mỗi statement — thấy commit mới nhất.","<b>Repeatable Read</b>: một snapshot cố định — đọc nhất quán, có thể lỗi serialization.","<b>Serializable</b>: thêm SSI <b>predicate lock</b> để đảm bảo tương đương thực thi tuần tự."]
+  },
+  commit: {
+    name: "COMMIT — WAL durability + CLOG + dọn trạng thái",
+    edges: ["e-state-wal","e-wal-clog","e-wal-sync","e-wal-pa","e-state-lock"],
+    nodes: ["txnstate","walcommit","clog","synccommit","procarray","locktable"], decor: [],
+    steps: ["<code>RecordTransactionCommit()</code> ghi <b>COMMIT WAL record</b> (nhận LSN).","<code>synchronous_commit=on</code> → <b>fsync WAL</b> tới LSN đó rồi mới báo client.","Set <b>CLOG</b> = committed cho xid.","Xoá xid khỏi <b>ProcArray</b> và <b>nhả toàn bộ lock</b>."]
+  },
+  abort: {
+    name: "ROLLBACK / ABORT — huỷ, không cần bền vững",
+    edges: ["e-wal-clog","e-wal-pa","e-state-lock"], nodes: ["txnstate","clog","procarray","locktable"], decor: [],
+    steps: ["Đánh dấu <b>CLOG = ABORTED</b> cho xid.","Thường <b>không cần fsync WAL</b> — thay đổi bị bỏ, tuple mới trở thành dead.","Xoá xid khỏi ProcArray, nhả lock.","Tuple 'chết' sẽ được VACUUM thu hồi sau."]
+  },
+  subxact: {
+    name: "Savepoint — subtransaction & pg_subtrans",
+    edges: ["e-sub-xid","e-sub-subtrans"], nodes: ["subxact","xidcounter","subtrans"], decor: [],
+    steps: ["<code>SAVEPOINT</code> tạo subtransaction, cấp một <b>sub-XID</b> riêng.","<code>pg_subtrans</code> map sub-XID → parent XID.","<code>ROLLBACK TO</code> chỉ huỷ phần sau savepoint; phần trước vẫn giữ.","Sub-XID chỉ bền vững khi <b>parent</b> commit."]
+  },
+  vacuum: {
+    name: "Vacuum · Freeze · Wraparound",
+    edges: ["e-pa-oldest","e-oldest-vac","e-vac-tuple","e-vac-freeze","e-freeze-clog","e-wrap-vac","e-freeze-trunc"],
+    nodes: ["procarray","oldestxmin","vacuum","tuple","freeze","wraparound","clog","clogtrunc"], decor: ["tuplebits"],
+    steps: ["Tính <b>OldestXmin</b> = xmin nhỏ nhất còn cần (ProcArray + slot + prepared).","Tuple dead nếu <code>xmax</code> đã commit và &lt; OldestXmin → VACUUM thu hồi + prune HOT.","<b>Freeze</b> xmin cũ thành FrozenXID → khỏi tra CLOG, đẩy <code>relfrozenxid</code>.","Ngăn <b>XID wraparound</b> (~2 tỷ txn) và truncate <code>pg_xact</code> cũ."]
+  }
+};
+
+const stage = document.getElementById('stage');
+const nodes = document.querySelectorAll('.node');
+const edges = document.querySelectorAll('.edge');
+const elbls = document.querySelectorAll('.elbl');
+const decors = document.querySelectorAll('.decor');
+const chips = document.querySelectorAll('.chip');
+const fcap = document.getElementById('flowcap');
+
+function setFlow(key) {
+  chips.forEach(c => c.classList.toggle('on', c.dataset.flow === key));
+  edges.forEach(e => e.classList.remove('lit'));
+  elbls.forEach(l => l.classList.remove('lit'));
+  nodes.forEach(n => n.classList.remove('lit'));
+  decors.forEach(d => d.classList.remove('lit'));
+  if (key === 'all') { stage.classList.remove('flowing'); fcap.classList.remove('show'); return; }
+  const f = FLOWS[key];
+  stage.classList.add('flowing');
+  f.edges.forEach(id => document.getElementById(id)?.classList.add('lit'));
+  elbls.forEach(l => { if (f.edges.includes(l.dataset.e)) l.classList.add('lit'); });
+  f.nodes.forEach(k => document.querySelector(`.node[data-k="${k}"]`)?.classList.add('lit'));
+  (f.decor || []).forEach(id => document.getElementById(id)?.classList.add('lit'));
+  document.getElementById('f-name').textContent = f.name;
+  document.getElementById('f-steps').innerHTML = f.steps.map(s => `<li>${s}</li>`).join('');
+  fcap.classList.add('show');
+}
+chips.forEach(c => c.addEventListener('click', () => setFlow(c.dataset.flow)));
+
+nodes.forEach(n => n.addEventListener('click', () => {
+  nodes.forEach(x => x.classList.remove('sel'));
+  n.classList.add('sel');
+  const d = DETAIL[n.dataset.k];
+  if (!d) return;
+  document.getElementById('d-title').textContent = d.t;
+  document.getElementById('d-meta').textContent = d.m;
+  document.getElementById('d-body').innerHTML = d.b;
+}));
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const dark = !document.documentElement.classList.contains('dark');
+  document.documentElement.classList.toggle('dark', dark);
+  localStorage.setItem('pgtx-theme', dark ? 'dark' : 'light');
+});
+</script>
+</body>
+</html>

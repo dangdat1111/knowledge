@@ -1,0 +1,734 @@
+<script>
+  (function () {
+    var saved = localStorage.getItem('pg-theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<style>
+  :root {
+    --bg: #FAF9F5; --surface: #FFFFFF; --surface2: #F0EEE6;
+    --ink: #141413; --body: #3D3D3A; --muted: #87867F;
+    --line: #D1CFC5; --line-soft: #E6E3DA;
+    --clay: #D97757; --clay-soft: rgba(217,119,87,0.10);
+    --olive: #788C5D; --olive-soft: rgba(120,140,93,0.12);
+    --gold: #C9A45C; --gold-soft: rgba(201,164,92,0.14);
+    --blue: #5B7E96; --blue-soft: rgba(91,126,150,0.12);
+    --plum: #8A6D9E; --plum-soft: rgba(138,109,158,0.12);
+    --zone: rgba(20,20,19,0.022); --zone-line: #D1CFC5;
+    --serif: ui-serif, Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413; --surface: #1F1F1D; --surface2: #2A2A28;
+      --ink: #FAF9F5; --body: #D1CFC5; --muted: #8E8D85;
+      --line: #3D3D3A; --line-soft: #2A2A28;
+      --clay: #E48A6E; --clay-soft: rgba(228,138,110,0.14);
+      --olive: #9DB07C; --olive-soft: rgba(157,176,124,0.16);
+      --gold: #D4B36F; --gold-soft: rgba(212,179,111,0.16);
+      --blue: #7FA3BC; --blue-soft: rgba(127,163,188,0.16);
+      --plum: #B197C4; --plum-soft: rgba(177,151,196,0.16);
+      --zone: rgba(250,249,245,0.03); --zone-line: #3D3D3A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141413; --surface: #1F1F1D; --surface2: #2A2A28;
+    --ink: #FAF9F5; --body: #D1CFC5; --muted: #8E8D85;
+    --line: #3D3D3A; --line-soft: #2A2A28;
+    --clay: #E48A6E; --clay-soft: rgba(228,138,110,0.14);
+    --olive: #9DB07C; --olive-soft: rgba(157,176,124,0.16);
+    --gold: #D4B36F; --gold-soft: rgba(212,179,111,0.16);
+    --blue: #7FA3BC; --blue-soft: rgba(127,163,188,0.16);
+    --plum: #B197C4; --plum-soft: rgba(177,151,196,0.16);
+    --zone: rgba(250,249,245,0.03); --zone-line: #3D3D3A;
+  }
+  :root[data-theme="light"] {
+    --bg: #FAF9F5; --surface: #FFFFFF; --surface2: #F0EEE6;
+    --ink: #141413; --body: #3D3D3A; --muted: #87867F;
+    --line: #D1CFC5; --line-soft: #E6E3DA;
+    --clay: #D97757; --clay-soft: rgba(217,119,87,0.10);
+    --olive: #788C5D; --olive-soft: rgba(120,140,93,0.12);
+    --gold: #C9A45C; --gold-soft: rgba(201,164,92,0.14);
+    --blue: #5B7E96; --blue-soft: rgba(91,126,150,0.12);
+    --plum: #8A6D9E; --plum-soft: rgba(138,109,158,0.12);
+    --zone: rgba(20,20,19,0.022); --zone-line: #D1CFC5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--body); font-family: var(--sans);
+    -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  /* ── top bar ─────────────────────────────── */
+  .bar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 11px 20px; border-bottom: 1px solid var(--line-soft); flex: none;
+  }
+  .bar h1 { font-family: var(--serif); font-weight: 500; font-size: 18px; color: var(--ink); letter-spacing: -0.01em; }
+  .bar .sub { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .spacer { flex: 1; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.03em;
+    padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px;
+    background: transparent; color: var(--muted); cursor: pointer; transition: all .15s ease;
+  }
+  .chip:hover { color: var(--ink); border-color: var(--muted); }
+  .chip.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  #themeToggle {
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px;
+    background: transparent; color: var(--muted); cursor: pointer;
+  }
+  #themeToggle:hover { color: var(--ink); border-color: var(--muted); }
+
+  /* ── stage ───────────────────────────────── */
+  .stage { flex: 1; position: relative; min-height: 0; }
+  .stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* zones */
+  .zone rect { fill: var(--zone); stroke: var(--zone-line); stroke-width: 1; stroke-dasharray: 5 5; }
+  .zone .ztitle { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; fill: var(--muted); }
+  .zone .zsub { font-family: var(--mono); font-size: 10px; fill: var(--muted); opacity: 0.72; }
+  .zone.zc rect { stroke: var(--blue); }
+  .zone.zl rect { stroke: var(--olive); }
+  .zone.zs rect { stroke: var(--clay); }
+  .zone.zd rect { stroke: var(--gold); }
+  .zone.zu rect { stroke: var(--plum); }
+
+  /* nodes */
+  .node { cursor: pointer; }
+  .node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; transition: stroke .15s ease, filter .15s ease; }
+  .node:hover rect { stroke: var(--muted); }
+  .node.sel rect { stroke: var(--clay) !important; stroke-width: 2.4; }
+  .node .t  { font-family: var(--sans); font-size: 14px; font-weight: 650; fill: var(--ink); pointer-events: none; }
+  .node .m  { font-family: var(--mono); font-size: 10.5px; fill: var(--muted); pointer-events: none; }
+  .node .k  { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--clay); pointer-events: none; }
+  .node .ct { font-family: var(--sans); font-size: 12.5px; font-weight: 650; fill: var(--ink); pointer-events: none; text-anchor: middle; }
+
+  .node.proc rect { fill: var(--blue-soft); stroke: var(--blue); }
+  .node.lmem rect { fill: var(--olive-soft); stroke: var(--olive); }
+  .node.shm  rect { fill: var(--surface2); stroke: var(--clay); }
+  .node.disk rect { fill: var(--gold-soft); stroke: var(--gold); }
+  .node.util rect { fill: var(--plum-soft); stroke: var(--plum); }
+  .node.step rect { fill: var(--clay-soft); stroke: var(--clay); }
+  .node.hero rect { stroke-width: 2; }
+
+  /* edges */
+  .edge { stroke: var(--muted); stroke-width: 1.5; fill: none; marker-end: url(#a-mut); transition: opacity .2s ease, stroke .2s ease; }
+  .edge.dash { stroke-dasharray: 5 4; opacity: 0.7; }
+  .edge.thin { stroke-width: 1.2; }
+  .elbl { font-family: var(--mono); font-size: 10px; fill: var(--muted); transition: opacity .2s ease; }
+
+  /* flow highlighting */
+  .stage.flowing .edge { opacity: 0.1; }
+  .stage.flowing .elbl { opacity: 0.1; }
+  .stage.flowing .node { opacity: 0.28; }
+  .stage.flowing .zone { opacity: 0.5; }
+  .stage.flowing .decor { opacity: 0.18; }
+  .stage.flowing .edge.lit {
+    opacity: 1; stroke: var(--clay); marker-end: url(#a-clay);
+    stroke-dasharray: 7 5; animation: march 0.9s linear infinite;
+  }
+  .stage.flowing .elbl.lit { opacity: 1; fill: var(--clay); }
+  .stage.flowing .node.lit { opacity: 1; }
+  .stage.flowing .node.lit rect { stroke: var(--clay); }
+  .stage.flowing .decor.lit { opacity: 1; }
+  @keyframes march { to { stroke-dashoffset: -12; } }
+  @media (prefers-reduced-motion: reduce) { .stage.flowing .edge.lit { animation: none; } .clk-hand { animation: none !important; } }
+
+  .badge { font-family: var(--mono); font-size: 11px; font-weight: 700; }
+  .badge circle { fill: var(--clay); }
+  .badge text { fill: var(--bg); }
+  .stage:not(.flowing) .badge { display: none; }
+
+  /* decorations */
+  .decor text { pointer-events: none; }
+  .decor .dl { font-family: var(--mono); font-size: 9px; fill: var(--muted); }
+  .decor .dt { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; fill: var(--muted); }
+  /* clock sweep */
+  .clk-ring { fill: none; stroke: var(--clay); stroke-width: 1.6; opacity: 0.85; }
+  .clk-tick { stroke: var(--muted); stroke-width: 1.2; }
+  .clk-hub  { fill: var(--clay); }
+  .clk-hand { stroke: var(--clay); stroke-width: 2; transform-origin: center; transform-box: fill-box; animation: sweep 6s steps(8) infinite; }
+  @keyframes sweep { to { transform: rotate(360deg); } }
+  /* page layout segments */
+  .pg-seg { stroke: var(--line); stroke-width: 1; }
+  .pg-hdr  { fill: var(--clay-soft); }
+  .pg-item { fill: var(--blue-soft); }
+  .pg-free { fill: var(--zone); }
+  .pg-tup  { fill: var(--olive-soft); }
+  .pg-spec { fill: var(--gold-soft); }
+  /* mvcc tuple */
+  .mv-seg { stroke: var(--clay); stroke-width: 1.2; fill: var(--surface); }
+  .mv-hi  { fill: var(--clay-soft); }
+  .mv-t   { font-family: var(--mono); font-size: 10px; fill: var(--ink); text-anchor: middle; pointer-events: none; }
+  .mv-s   { font-family: var(--mono); font-size: 8.5px; fill: var(--muted); text-anchor: middle; pointer-events: none; }
+
+  /* ── floating cards ──────────────────────── */
+  .card {
+    position: absolute;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 13px 15px; box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+  }
+  #detail { right: 16px; bottom: 16px; width: 340px; }
+  #detail h3 { font-family: var(--serif); font-weight: 500; font-size: 16px; color: var(--ink); margin-bottom: 2px; }
+  #detail .meta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+  #detail p { font-size: 12.5px; line-height: 1.55; }
+  #detail p code, #flowcap code { font-family: var(--mono); font-size: 11px; color: var(--clay); }
+  #flowcap { left: 16px; bottom: 16px; max-width: 470px; display: none; }
+  #flowcap.show { display: block; }
+  #flowcap .fname { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--clay); margin-bottom: 6px; }
+  #flowcap ol { margin-left: 18px; }
+  #flowcap li { font-size: 12px; line-height: 1.5; margin-bottom: 3px; }
+  .src { position: absolute; top: 10px; right: 16px; font-family: var(--mono); font-size: 10px; color: var(--muted); opacity: 0.8; }
+  .legend { position: absolute; left: 16px; top: 10px; display: flex; gap: 12px; flex-wrap: wrap; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; border: 1px solid var(--line); display: inline-block; }
+  .lg-proc { background: var(--blue-soft); border-color: var(--blue); }
+  .lg-lmem { background: var(--olive-soft); border-color: var(--olive); }
+  .lg-shm  { background: var(--surface2); border-color: var(--clay); }
+  .lg-disk { background: var(--gold-soft); border-color: var(--gold); }
+  .lg-util { background: var(--plum-soft); border-color: var(--plum); }
+
+  @media (max-width: 900px) {
+    body { overflow: auto; }
+    .stage { min-height: 78vh; }
+    #detail { position: static; width: auto; margin: 10px 16px; }
+    #flowcap { position: static; margin: 0 16px 16px; }
+    .legend { position: static; margin: 8px 16px; }
+    .src { display: none; }
+  }
+</style>
+
+<div class="bar">
+  <div>
+    <h1>PostgreSQL — Internal Architecture</h1>
+    <div class="sub">process model · shared memory · local memory · on-disk layout · write path</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="chips" id="chips">
+    <button class="chip on" data-flow="all">Toàn cảnh</button>
+    <button class="chip" data-flow="connect">Kết nối</button>
+    <button class="chip" data-flow="query">Query pipeline</button>
+    <button class="chip" data-flow="read">Đọc / Buffer</button>
+    <button class="chip" data-flow="write">UPDATE · MVCC</button>
+    <button class="chip" data-flow="commit">Commit · WAL</button>
+    <button class="chip" data-flow="checkpoint">Checkpoint</button>
+    <button class="chip" data-flow="bgwriter">Bg Writer</button>
+    <button class="chip" data-flow="vacuum">Autovacuum</button>
+  </div>
+  <button id="themeToggle">Theme</button>
+</div>
+
+<div class="stage" id="stage">
+<svg viewBox="0 0 1740 1180" preserveAspectRatio="xMidYMid meet" role="img" aria-label="PostgreSQL internal architecture deep-dive diagram">
+  <defs>
+    <marker id="a-mut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" style="fill: var(--muted)"/>
+    </marker>
+    <marker id="a-clay" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" style="fill: var(--clay)"/>
+    </marker>
+  </defs>
+
+  <!-- ── zones ─────────────────────────────── -->
+  <g class="zone zc" id="z-clients">
+    <rect x="24" y="150" width="180" height="260" rx="16"/>
+    <text class="ztitle" x="44" y="180">Clients</text>
+    <text class="zsub" x="44" y="198">libpq · 1 conn = 1 backend</text>
+  </g>
+  <g class="zone" id="z-process">
+    <rect x="224" y="96" width="320" height="470" rx="16"/>
+    <text class="ztitle" x="244" y="126">1 · Processes</text>
+    <text class="zsub" x="244" y="144">postmaster + per-session backend</text>
+  </g>
+  <g class="zone zl" id="z-local">
+    <rect x="564" y="96" width="280" height="380" rx="16"/>
+    <text class="ztitle" x="584" y="126">3 · Local Memory</text>
+    <text class="zsub" x="584" y="144">private to each backend</text>
+  </g>
+  <g class="zone zs" id="z-shared">
+    <rect x="864" y="96" width="360" height="560" rx="16"/>
+    <text class="ztitle" x="884" y="126">2 · Shared Memory · SGA</text>
+    <text class="zsub" x="884" y="144">shared_buffers + WAL + locks</text>
+  </g>
+  <g class="zone zd" id="z-storage">
+    <rect x="1244" y="96" width="470" height="820" rx="16"/>
+    <text class="ztitle" x="1264" y="126">4 · Storage · On-Disk ($PGDATA)</text>
+    <text class="zsub" x="1264" y="144">heap · WAL · maps · TOAST</text>
+  </g>
+  <g class="zone zu" id="z-utility">
+    <rect x="224" y="840" width="1000" height="280" rx="16"/>
+    <text class="ztitle" x="244" y="870">1 · Utility (Auxiliary) Processes</text>
+    <text class="zsub" x="244" y="888">background daemons forked by postmaster</text>
+  </g>
+
+  <!-- ── edges ─────────────────────────────── -->
+  <!-- connect + pipeline -->
+  <path class="edge" id="e-cli-pm"    d="M184,286 C 212,282 224,210 248,198"/>
+  <path class="edge" id="e-pm-be"     d="M360,238 L360,262"/>
+  <path class="edge" id="e-be-parse"  d="M340,358 C 312,378 290,388 276,404"/>
+  <path class="edge" id="e-parse-rew" d="M308,430 L316,430"/>
+  <path class="edge" id="e-rew-plan"  d="M396,430 L404,430"/>
+  <path class="edge" id="e-plan-exec" d="M466,430 L474,430"/>
+  <path class="edge" id="e-be-cat"    d="M472,318 C 540,326 560,410 588,424"/>
+  <!-- exec fan-out -->
+  <path class="edge" id="e-exec-wm"   d="M520,404 C 556,362 560,214 588,190"/>
+  <path class="edge hero" id="e-exec-buf" d="M505,456 C 620,556 748,566 864,262"/>
+  <path class="edge" id="e-exec-wal"  d="M505,456 C 660,586 770,470 864,366"/>
+  <path class="edge" id="e-exec-lock" d="M505,456 C 660,620 830,540 902,522"/>
+  <path class="edge" id="e-exec-clog" d="M505,456 C 720,660 980,560 1080,522"/>
+  <!-- buffer <-> disk -->
+  <path class="edge" id="e-buf-heap"  d="M1224,196 C 1244,192 1250,204 1268,202"/>
+  <!-- WAL path -->
+  <path class="edge" id="e-walbuf-writer" d="M980,398 C 970,600 900,720 848,900"/>
+  <path class="edge" id="e-walwriter-file" d="M960,930 C 1120,900 1190,640 1268,522"/>
+  <path class="edge" id="e-clog-file" d="M1138,522 C 1180,600 1224,680 1268,712"/>
+  <path class="edge" id="e-repl-wal"  d="M1224,572 C 1246,558 1252,530 1268,512"/>
+  <!-- checkpoint / bgwriter -->
+  <path class="edge" id="e-ckpt-buf"  d="M400,900 C 560,600 820,380 998,296"/>
+  <path class="edge" id="e-bg-buf"    d="M620,900 C 740,640 920,360 1044,300"/>
+  <path class="edge" id="e-arch-wal"  d="M1204,936 C 1250,860 1252,600 1268,524"/>
+  <!-- autovacuum -->
+  <path class="edge" id="e-avl-avw"   d="M416,1042 L436,1042"/>
+  <path class="edge" id="e-avw-buf"   d="M560,1000 C 720,660 940,380 1060,300"/>
+  <path class="edge" id="e-avw-vm"    d="M652,1002 C 980,840 1340,700 1490,624"/>
+  <!-- index-only scan (VM feeds executor) -->
+  <path class="edge dash" id="e-vm-exec" d="M1490,600 C 1080,700 720,600 538,436"/>
+  <!-- toast off-heap -->
+  <path class="edge" id="e-heap-toast" d="M1690,204 C 1722,400 1722,640 1690,826"/>
+  <!-- stats + logging (faint) -->
+  <path class="edge dash thin" id="e-be-stats" d="M300,358 C 300,700 560,940 700,1000"/>
+
+  <!-- edge labels -->
+  <text class="elbl" data-e="e-cli-pm"    x="196" y="234">connect :5432</text>
+  <text class="elbl" data-e="e-pm-be"     x="366" y="254">fork</text>
+  <text class="elbl" data-e="e-be-cat"    x="486" y="392">catalog / plans</text>
+  <text class="elbl" data-e="e-exec-wm"   x="548" y="330" text-anchor="middle">sort · hash · work_mem</text>
+  <text class="elbl" data-e="e-exec-buf"  x="700" y="574" text-anchor="middle">read / write 8KB pages</text>
+  <text class="elbl" data-e="e-exec-wal"  x="712" y="512" text-anchor="middle">redo (WAL) records</text>
+  <text class="elbl" data-e="e-exec-lock" x="800" y="588" text-anchor="middle">acquire locks</text>
+  <text class="elbl" data-e="e-exec-clog" x="946" y="600" text-anchor="middle">commit status</text>
+  <text class="elbl" data-e="e-buf-heap"  x="1246" y="180" text-anchor="middle">block I/O</text>
+  <text class="elbl" data-e="e-walbuf-writer" x="906" y="720" text-anchor="middle">flush on commit</text>
+  <text class="elbl" data-e="e-walwriter-file" x="1150" y="628">fsync → pg_wal</text>
+  <text class="elbl" data-e="e-clog-file" x="1188" y="628">persist status</text>
+  <text class="elbl" data-e="e-repl-wal"  x="1210" y="548" text-anchor="end">retain WAL</text>
+  <text class="elbl" data-e="e-ckpt-buf"  x="612" y="576" text-anchor="middle">flush ALL dirty</text>
+  <text class="elbl" data-e="e-bg-buf"    x="812" y="540" text-anchor="middle">clock-sweep trickle</text>
+  <text class="elbl" data-e="e-arch-wal"  x="1214" y="628">archive_command</text>
+  <text class="elbl" data-e="e-avl-avw"   x="426" y="1034" text-anchor="middle">spawn</text>
+  <text class="elbl" data-e="e-avw-buf"   x="820" y="560" text-anchor="middle">scan heap pages</text>
+  <text class="elbl" data-e="e-avw-vm"    x="1360" y="686" text-anchor="middle">set all-visible/frozen · FSM</text>
+  <text class="elbl" data-e="e-vm-exec"   x="980" y="636" text-anchor="middle">index-only scan: skip heap</text>
+  <text class="elbl" data-e="e-heap-toast" x="1716" y="520" text-anchor="middle">oversized attr</text>
+
+  <!-- ── nodes: clients ────────────────────── -->
+  <g class="node" data-k="client">
+    <rect x="44" y="236" width="140" height="116" rx="10"/>
+    <text class="t" x="62" y="266">Client</text>
+    <text class="m" x="62" y="288">psql · app · driver</text>
+    <text class="m" x="62" y="306">libpq protocol</text>
+    <text class="m" x="62" y="324">TCP / unix socket</text>
+    <text class="k" x="62" y="343">:5432</text>
+  </g>
+
+  <!-- ── nodes: process ────────────────────── -->
+  <g class="node proc" data-k="postmaster">
+    <rect x="248" y="146" width="224" height="92" rx="10"/>
+    <text class="t" x="266" y="176">Postmaster</text>
+    <text class="m" x="266" y="198">supervisor · listens :5432</text>
+    <text class="m" x="266" y="216">forks 1 backend / connection</text>
+  </g>
+  <g class="node proc" data-k="backend">
+    <rect x="248" y="262" width="224" height="96" rx="10"/>
+    <text class="t" x="266" y="292">Backend · <tspan style="font-family:var(--mono);font-size:12px">postgres</tspan></text>
+    <text class="m" x="266" y="314">one OS process / session</text>
+    <text class="m" x="266" y="332">runs the query pipeline ↓</text>
+  </g>
+  <text class="k" x="248" y="392" style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.08em;fill:var(--muted)">QUERY PIPELINE · ZONE 5</text>
+  <g class="node step" data-k="parse">
+    <rect x="240" y="404" width="68" height="52" rx="9"/>
+    <text class="ct" x="274" y="434">Parse</text>
+  </g>
+  <g class="node step" data-k="rewrite">
+    <rect x="316" y="404" width="80" height="52" rx="9"/>
+    <text class="ct" x="356" y="434">Rewrite</text>
+  </g>
+  <g class="node step" data-k="plan">
+    <rect x="404" y="404" width="62" height="52" rx="9"/>
+    <text class="ct" x="435" y="434">Plan</text>
+  </g>
+  <g class="node step hero" data-k="exec">
+    <rect x="474" y="404" width="62" height="52" rx="9"/>
+    <text class="ct" x="505" y="434">Exec</text>
+  </g>
+
+  <!-- ── nodes: local memory ───────────────── -->
+  <g class="node lmem" data-k="workmem">
+    <rect x="588" y="150" width="232" height="72" rx="10"/>
+    <text class="t" x="606" y="180">work_mem</text>
+    <text class="m" x="606" y="200">sort · hash join · aggregate</text>
+    <text class="m" x="606" y="216">spills to temp files if exceeded</text>
+  </g>
+  <g class="node lmem" data-k="maintmem">
+    <rect x="588" y="238" width="232" height="64" rx="10"/>
+    <text class="t" x="606" y="266">maintenance_work_mem</text>
+    <text class="m" x="606" y="286">VACUUM · CREATE INDEX</text>
+  </g>
+  <g class="node lmem" data-k="tempbuf">
+    <rect x="588" y="318" width="232" height="56" rx="10"/>
+    <text class="t" x="606" y="344">temp_buffers</text>
+    <text class="m" x="606" y="362">session temp tables</text>
+  </g>
+  <g class="node lmem" data-k="catcache">
+    <rect x="588" y="390" width="232" height="72" rx="10"/>
+    <text class="t" x="606" y="416">Catalog Cache + Plans</text>
+    <text class="m" x="606" y="436">SysCache · RelCache</text>
+    <text class="m" x="606" y="452">prepared statement plans</text>
+  </g>
+
+  <!-- ── nodes: shared memory (SGA) ────────── -->
+  <g class="node shm hero" data-k="bufpool">
+    <rect x="864" y="150" width="360" height="150" rx="10"/>
+    <text class="t" x="884" y="182">Shared Buffer Pool</text>
+    <text class="m" x="884" y="203">8KB pages · shared_buffers</text>
+    <text class="m" x="884" y="221">buffer descriptors: dirty · refcount</text>
+    <text class="m" x="884" y="239">usage_count · pin state</text>
+    <text class="k" x="884" y="262">clock-sweep eviction →</text>
+  </g>
+  <g class="node shm" data-k="walbuf">
+    <rect x="864" y="320" width="360" height="78" rx="10"/>
+    <text class="t" x="884" y="350">WAL Buffers</text>
+    <text class="m" x="884" y="370">wal_buffers · redo records staged</text>
+    <text class="m" x="884" y="388">flushed &amp; fsync'd on COMMIT</text>
+  </g>
+  <g class="node shm" data-k="locktable">
+    <rect x="864" y="418" width="172" height="104" rx="10"/>
+    <text class="t" x="882" y="446">Lock Table</text>
+    <text class="m" x="882" y="466">shared · exclusive</text>
+    <text class="m" x="882" y="484">row / table / page</text>
+    <text class="m" x="882" y="502">predicate (SSI)</text>
+  </g>
+  <g class="node shm" data-k="clogbuf">
+    <rect x="1052" y="418" width="172" height="104" rx="10"/>
+    <text class="t" x="1070" y="446">CLOG Buffer</text>
+    <text class="m" x="1070" y="466">pg_xact cache</text>
+    <text class="m" x="1070" y="484">2 bits / XID</text>
+    <text class="m" x="1070" y="502">commit / abort</text>
+  </g>
+  <g class="node shm" data-k="replslots">
+    <rect x="864" y="542" width="360" height="74" rx="10"/>
+    <text class="t" x="884" y="572">Replication Slots</text>
+    <text class="m" x="884" y="592">retain WAL for consumers</text>
+    <text class="m" x="884" y="608">+ other shared memory contexts</text>
+  </g>
+
+  <!-- ── nodes: storage / on-disk ──────────── -->
+  <g class="node disk" data-k="heap">
+    <rect x="1268" y="150" width="422" height="104" rx="10"/>
+    <text class="t" x="1286" y="180">Data Files — <tspan style="font-family:var(--mono);font-size:12px">base/</tspan></text>
+    <text class="m" x="1286" y="202">heap: 1GB segments → 8KB pages/blocks</text>
+    <text class="m" x="1286" y="220">forks: main · fsm · vm · init</text>
+    <text class="m" x="1286" y="238">accessed by relfilenode</text>
+  </g>
+  <g class="node disk" data-k="page">
+    <rect x="1268" y="278" width="422" height="150" rx="10"/>
+    <text class="t" x="1286" y="306">Page (Block) Layout</text>
+    <text class="m" x="1286" y="326">PageHeaderData (24B)</text>
+    <text class="m" x="1286" y="344">line pointers (ItemId) →</text>
+    <text class="m" x="1286" y="362">← tuples · free space between</text>
+    <text class="m" x="1286" y="380">special space (index only)</text>
+  </g>
+  <g class="node disk" data-k="walfile">
+    <rect x="1268" y="452" width="422" height="92" rx="10"/>
+    <text class="t" x="1286" y="482">WAL Files — <tspan style="font-family:var(--mono);font-size:12px">pg_wal/</tspan></text>
+    <text class="m" x="1286" y="504">16MB segments · addressed by LSN</text>
+    <text class="m" x="1286" y="522">write-ahead redo log · durability</text>
+  </g>
+  <g class="node disk" data-k="fsm">
+    <rect x="1268" y="566" width="200" height="92" rx="10"/>
+    <text class="t" x="1286" y="596">Free Space Map</text>
+    <text class="m" x="1286" y="616">per-page free bytes</text>
+    <text class="m" x="1286" y="634">where to INSERT</text>
+  </g>
+  <g class="node disk" data-k="vm">
+    <rect x="1490" y="566" width="200" height="92" rx="10"/>
+    <text class="t" x="1508" y="596">Visibility Map</text>
+    <text class="m" x="1508" y="616">all-visible bit</text>
+    <text class="m" x="1508" y="634">all-frozen bit</text>
+  </g>
+  <g class="node disk" data-k="pgxact">
+    <rect x="1268" y="678" width="422" height="80" rx="10"/>
+    <text class="t" x="1286" y="708">pg_xact — Commit Log (CLOG)</text>
+    <text class="m" x="1286" y="730">2-bit transaction status / XID</text>
+    <text class="m" x="1286" y="748">in-progress · committed · aborted</text>
+  </g>
+  <g class="node disk" data-k="toast">
+    <rect x="1268" y="782" width="422" height="92" rx="10"/>
+    <text class="t" x="1286" y="812">TOAST</text>
+    <text class="m" x="1286" y="834">oversized attrs stored out-of-line</text>
+    <text class="m" x="1286" y="852">compress + slice into ~2KB chunks</text>
+  </g>
+
+  <!-- ── nodes: utility processes ──────────── -->
+  <g class="node util" data-k="checkpointer">
+    <rect x="248" y="900" width="224" height="84" rx="10"/>
+    <text class="t" x="266" y="930">Checkpointer</text>
+    <text class="m" x="266" y="950">flush ALL dirty → data files</text>
+    <text class="m" x="266" y="968">writes checkpoint WAL record</text>
+  </g>
+  <g class="node util" data-k="bgwriter">
+    <rect x="492" y="900" width="224" height="84" rx="10"/>
+    <text class="t" x="510" y="930">Background Writer</text>
+    <text class="m" x="510" y="950">trickles dirty pages out</text>
+    <text class="m" x="510" y="968">eases backend eviction</text>
+  </g>
+  <g class="node util" data-k="walwriter">
+    <rect x="736" y="900" width="224" height="84" rx="10"/>
+    <text class="t" x="754" y="930">WAL Writer</text>
+    <text class="m" x="754" y="950">flush WAL buffers → pg_wal</text>
+    <text class="m" x="754" y="968">fsync at commit / interval</text>
+  </g>
+  <g class="node util" data-k="archiver">
+    <rect x="980" y="900" width="224" height="84" rx="10"/>
+    <text class="t" x="998" y="930">WAL Archiver</text>
+    <text class="m" x="998" y="950">copy filled 16MB segments</text>
+    <text class="m" x="998" y="968">archive_command · PITR</text>
+  </g>
+  <g class="node util" data-k="avlauncher">
+    <rect x="248" y="1000" width="168" height="84" rx="10"/>
+    <text class="t" x="266" y="1030">Autovacuum</text>
+    <text class="t" x="266" y="1048">Launcher</text>
+    <text class="m" x="266" y="1068">schedules workers</text>
+  </g>
+  <g class="node util" data-k="avworker">
+    <rect x="436" y="1000" width="224" height="84" rx="10"/>
+    <text class="t" x="454" y="1030">Autovacuum Worker</text>
+    <text class="m" x="454" y="1050">reclaim dead tuples</text>
+    <text class="m" x="454" y="1068">update FSM / VM · freeze</text>
+  </g>
+  <g class="node util" data-k="stats">
+    <rect x="680" y="1000" width="200" height="84" rx="10"/>
+    <text class="t" x="698" y="1030">Stats Collector</text>
+    <text class="m" x="698" y="1050">cumulative statistics</text>
+    <text class="m" x="698" y="1068">feeds the planner</text>
+  </g>
+  <g class="node util" data-k="logger">
+    <rect x="900" y="1000" width="200" height="84" rx="10"/>
+    <text class="t" x="918" y="1030">Logging Collector</text>
+    <text class="m" x="918" y="1050">stderr → log files</text>
+    <text class="m" x="918" y="1068">rotation</text>
+  </g>
+
+  <!-- ── decor: clock-sweep ring (inside buffer pool) ── -->
+  <g class="decor" id="clock">
+    <circle class="clk-ring" cx="1150" cy="206" r="32"/>
+    <line class="clk-tick" x1="1150" y1="176" x2="1150" y2="171"/>
+    <line class="clk-tick" x1="1171" y1="185" x2="1175" y2="181"/>
+    <line class="clk-tick" x1="1180" y1="206" x2="1185" y2="206"/>
+    <line class="clk-tick" x1="1171" y1="227" x2="1175" y2="231"/>
+    <line class="clk-tick" x1="1150" y1="236" x2="1150" y2="241"/>
+    <line class="clk-tick" x1="1129" y1="227" x2="1125" y2="231"/>
+    <line class="clk-tick" x1="1120" y1="206" x2="1115" y2="206"/>
+    <line class="clk-tick" x1="1129" y1="185" x2="1125" y2="181"/>
+    <rect class="clk-hand" x="1149" y="180" width="2" height="52"/>
+    <circle class="clk-hub" cx="1150" cy="206" r="3"/>
+  </g>
+
+  <!-- ── decor: page layout mini (inside page node) ── -->
+  <g class="decor" id="pagemini">
+    <rect class="pg-seg pg-hdr"  x="1512" y="300" width="160" height="15"/>
+    <rect class="pg-seg pg-item" x="1512" y="315" width="160" height="13"/>
+    <rect class="pg-seg pg-free" x="1512" y="328" width="160" height="50"/>
+    <rect class="pg-seg pg-tup"  x="1512" y="378" width="160" height="20"/>
+    <rect class="pg-seg pg-spec" x="1512" y="398" width="160" height="12"/>
+    <text class="dl" x="1592" y="311" text-anchor="middle">PageHeader (24B)</text>
+    <text class="dl" x="1592" y="325" text-anchor="middle">line pointers →</text>
+    <text class="dl" x="1592" y="356" text-anchor="middle">free space</text>
+    <text class="dl" x="1592" y="392" text-anchor="middle">← tuples (grow up)</text>
+    <text class="dl" x="1592" y="407" text-anchor="middle">special</text>
+  </g>
+
+  <!-- ── decor: MVCC heap tuple header ── -->
+  <g class="decor" id="mvcc">
+    <text class="dt" x="636" y="682">Heap Tuple · MVCC header — t_ctid chains row versions</text>
+    <rect class="mv-seg" x="636"  y="694" width="70"  height="30"/>
+    <rect class="mv-seg" x="706"  y="694" width="70"  height="30"/>
+    <rect class="mv-seg" x="776"  y="694" width="60"  height="30"/>
+    <rect class="mv-seg mv-hi" x="836" y="694" width="90" height="30"/>
+    <rect class="mv-seg" x="926"  y="694" width="90"  height="30"/>
+    <rect class="mv-seg" x="1016" y="694" width="80"  height="30"/>
+    <rect class="mv-seg" x="1096" y="694" width="120" height="30"/>
+    <text class="mv-t" x="671"  y="713">xmin</text>
+    <text class="mv-t" x="741"  y="713">xmax</text>
+    <text class="mv-t" x="806"  y="713">t_cid</text>
+    <text class="mv-t" x="881"  y="713">t_ctid</text>
+    <text class="mv-t" x="971"  y="713">infomask</text>
+    <text class="mv-t" x="1056" y="713">null bmp</text>
+    <text class="mv-t" x="1156" y="713">user data →</text>
+    <text class="mv-s" x="671"  y="740">insert xid</text>
+    <text class="mv-s" x="741"  y="740">delete/lock xid</text>
+    <text class="mv-s" x="806"  y="740">cmd id</text>
+    <text class="mv-s" x="881"  y="740">→ next version</text>
+    <text class="mv-s" x="971"  y="740">hint bits</text>
+    <text class="mv-s" x="1056" y="740">optional</text>
+    <text class="mv-s" x="1156" y="740">columns</text>
+  </g>
+</svg>
+
+  <div class="src">PostgreSQL 16 internals · deep-dive</div>
+
+  <div class="legend">
+    <span><i class="lg-proc"></i>Process</span>
+    <span><i class="lg-lmem"></i>Local mem</span>
+    <span><i class="lg-shm"></i>Shared mem</span>
+    <span><i class="lg-disk"></i>On-disk</span>
+    <span><i class="lg-util"></i>Utility proc</span>
+  </div>
+
+  <div class="card" id="flowcap">
+    <div class="fname" id="f-name"></div>
+    <ol id="f-steps"></ol>
+  </div>
+
+  <div class="card" id="detail">
+    <h3 id="d-title">Bấm vào bất kỳ khối nào</h3>
+    <div class="meta" id="d-meta">node detail</div>
+    <p id="d-body">Mọi khối đều bấm được để xem chi tiết. Các chip phía trên tô sáng & animate từng luồng hành vi của hệ thống — kết nối, query pipeline, đọc buffer, UPDATE theo MVCC, commit/WAL, checkpoint, background writer, autovacuum.</p>
+  </div>
+</div>
+
+<script>
+const DETAIL = {
+  client:      { t:"Client", m:"client · libpq · :5432", b:"Ứng dụng / <code>psql</code> / driver kết nối qua <b>libpq</b>. Mỗi kết nối TCP tới cổng <code>5432</code> được phục vụ bởi một backend riêng — Postgres theo mô hình <b>process-per-connection</b>, không phải thread pool." },
+  postmaster:  { t:"Postmaster", m:"process · supervisor daemon", b:"Tiến trình cha. Lắng nghe :5432, xác thực, rồi <b>fork()</b> một backend cho mỗi phiên. Khởi động & giám sát mọi utility process; nếu một backend crash, postmaster reset shared memory để đảm bảo an toàn." },
+  backend:     { t:"Backend (postgres)", m:"process · one per session", b:"Tiến trình <code>postgres</code> phục vụ đúng một phiên. Chạy toàn bộ query pipeline, đọc/ghi trực tiếp Shared Buffers và sinh WAL. Bộ nhớ riêng của nó là Local Memory." },
+  parse:       { t:"Parse", m:"pipeline · bước 1", b:"<b>Parser</b> kiểm tra cú pháp SQL và dựng <i>parse tree</i>. Chưa hiểu ngữ nghĩa bảng/cột — chỉ đúng ngữ pháp." },
+  rewrite:     { t:"Rewrite", m:"pipeline · bước 2", b:"<b>Analyzer + Rewriter</b> phân giải tên qua system catalog, áp dụng rule system và khai triển VIEW → <i>query tree</i>." },
+  plan:        { t:"Plan", m:"pipeline · bước 3", b:"<b>Planner / Optimizer</b> sinh nhiều phương án (seq/index scan, các kiểu join…) và chọn cây có <b>cost</b> thấp nhất, dựa trên statistics + catalog cache." },
+  exec:        { t:"Execute", m:"pipeline · bước 4 · hero", b:"<b>Executor</b> chạy plan theo mô hình Volcano (kéo từng tuple). Đây là nơi phát sinh mọi truy cập Shared Buffer, WAL, Lock và CLOG — trái tim của luồng đọc/ghi." },
+  workmem:     { t:"work_mem", m:"local · per-operation", b:"Bộ nhớ làm việc cho từng thao tác <b>sort / hash join / hash aggregate</b>. Vượt <code>work_mem</code> thì spill ra temp file. Là per-operation nên một query phức tạp có thể dùng nhiều lần." },
+  maintmem:    { t:"maintenance_work_mem", m:"local · maintenance", b:"Giống work_mem nhưng cho <b>VACUUM</b> và <b>CREATE INDEX</b>. Thường đặt lớn hơn nhiều vì các tác vụ này chạy thưa và hưởng lợi từ bộ nhớ lớn." },
+  tempbuf:     { t:"temp_buffers", m:"local · temp tables", b:"Vùng đệm riêng cho <b>temporary tables</b> của phiên. Không nằm trong Shared Buffers vì temp table chỉ phiên đó nhìn thấy." },
+  catcache:    { t:"Catalog Cache + Plans", m:"local · SysCache / RelCache", b:"Cache metadata trong từng backend: <b>SysCache</b> (hàng catalog), <b>RelCache</b> (định nghĩa bảng/index) và <b>prepared statement plans</b>. Giúp planner khỏi đọc lại <code>pg_catalog</code> mỗi câu lệnh." },
+  bufpool:     { t:"Shared Buffer Pool", m:"SGA · shared_buffers", b:"Cache trung tâm, chia thành buffer 8KB. Mỗi buffer có <b>descriptor</b>: cờ dirty, refcount (pin), usage_count. Khi cần chỗ, <b>clock-sweep</b> quét vòng, giảm usage_count và chọn nạn nhân bằng 0." },
+  walbuf:      { t:"WAL Buffers", m:"SGA · wal_buffers", b:"Đệm các <b>WAL record</b> trước khi xuống đĩa. Nguyên tắc <b>WAL-before-data</b>: bản ghi WAL của một thay đổi phải được flush TRƯỚC khi page dữ liệu tương ứng được ghi ra heap." },
+  locktable:   { t:"Lock Table", m:"SGA · heavyweight + SSI", b:"Khóa trong shared memory: heavyweight lock (row/page/table, shared–exclusive) và <b>predicate lock</b> cho Serializable (SSI). LWLock bảo vệ chính các cấu trúc shared memory." },
+  clogbuf:     { t:"CLOG Buffer", m:"SGA · pg_xact cache", b:"Cache RAM của Commit Log. Lưu trạng thái 2-bit mỗi transaction. Khi kiểm tra visibility, MVCC hỏi CLOG: transaction tạo/xoá tuple này đã commit chưa?" },
+  replslots:   { t:"Replication Slots", m:"SGA · WAL retention", b:"Ghi nhớ LSN mà consumer (replica vật lý / logical) đã tiêu thụ, để Postgres <b>giữ lại WAL</b> chưa được xác nhận. Cùng nằm trong các shared memory context khác." },
+  heap:        { t:"Data Files (base/)", m:"disk · heap", b:"File bảng trong <code>base/</code>. Mỗi bảng là chuỗi segment 1GB, chia thành page 8KB. Nhiều fork: <b>main</b> (dữ liệu), <b>fsm</b>, <b>vm</b>, <b>init</b>. Định vị bằng relfilenode." },
+  page:        { t:"Page (Block) Layout", m:"disk · 8KB block", b:"Một block 8KB: <b>PageHeader</b> (24B) → mảng <b>line pointer (ItemId)</b> mọc xuống ↓ → <b>free space</b> → <b>tuple</b> mọc lên ↑ → <b>special space</b> (index). Line pointer cho phép dời tuple trong page mà con trỏ ngoài (ctid) không đổi." },
+  walfile:     { t:"WAL Files (pg_wal/)", m:"disk · 16MB · LSN", b:"WAL vật lý, segment 16MB. Mỗi byte có địa chỉ <b>LSN</b>. Là nguồn sự thật để crash recovery <b>replay (redo)</b> mọi thay đổi chưa kịp checkpoint." },
+  fsm:         { t:"Free Space Map", m:"disk · fork fsm", b:"Theo dõi byte trống của từng page để INSERT/UPDATE tìm nhanh chỗ còn trống, thay vì quét tuần tự." },
+  vm:          { t:"Visibility Map", m:"disk · fork vm", b:"Mỗi page 2 bit — <b>all-visible</b> (mọi tuple hiển thị với mọi transaction) và <b>all-frozen</b>. Cho phép <b>Index-Only Scan</b> bỏ qua heap, và giúp VACUUM bỏ qua page sạch." },
+  pgxact:      { t:"pg_xact (CLOG)", m:"disk · commit log", b:"2 bit trạng thái commit / abort / in-progress cho mỗi XID. Cơ sở để MVCC quyết định version nào của tuple là hiển thị." },
+  toast:       { t:"TOAST", m:"disk · out-of-line", b:"The Oversized-Attribute Storage Technique. Giá trị vượt ~2KB được <b>nén</b> và cắt thành chunk lưu ở bảng TOAST phụ; tuple chính chỉ giữ con trỏ. Trong suốt với người dùng." },
+  checkpointer:{ t:"Checkpointer", m:"utility · durability", b:"Định kỳ tạo <b>checkpoint</b>: ghi TẤT CẢ dirty buffer xuống data file + fsync, ghi checkpoint record vào WAL, cập nhật control file. Sau đó WAL trước điểm này có thể tái sử dụng." },
+  bgwriter:    { t:"Background Writer", m:"utility · smoothing", b:"Ghi dần (trickle) dirty page ra đĩa giữa hai checkpoint, để luôn sẵn buffer sạch cho clock-sweep — giảm độ trễ khi backend cần evict." },
+  walwriter:   { t:"WAL Writer", m:"utility · WAL flush", b:"Đẩy WAL Buffers ra <code>pg_wal</code> và fsync — theo chu kỳ và bắt buộc tại COMMIT. Tách flush WAL khỏi backend giúp gom nhóm ghi (group commit)." },
+  archiver:    { t:"WAL Archiver", m:"utility · PITR", b:"Khi một segment 16MB đầy, copy nó đi bằng <code>archive_command</code> — nền tảng cho Point-In-Time Recovery và log-shipping replication." },
+  avlauncher:  { t:"Autovacuum Launcher", m:"utility · scheduler", b:"Canh ngưỡng (dead tuples, tuổi XID) và lên lịch, rồi nhờ postmaster spawn worker cho từng database." },
+  avworker:    { t:"Autovacuum Worker", m:"utility · GC + freeze", b:"Quét bảng thu hồi <b>dead tuple</b> (xmax đã commit & không snapshot nào còn thấy), cập nhật FSM & Visibility Map, và <b>freeze</b> tuple cũ chống XID wraparound. Cũng chạy ANALYZE." },
+  stats:       { t:"Stats Collector", m:"utility · statistics", b:"Thu thập thống kê tích luỹ (scan, tuple đọc/ghi, dead tuple…). Autovacuum và planner dựa vào đây để ra quyết định." },
+  logger:      { t:"Logging Collector", m:"utility · logging", b:"Gom stderr từ mọi process thành file log có xoay vòng — bật khi <code>logging_collector = on</code>." },
+};
+
+const FLOWS = {
+  connect: {
+    name: "Kết nối — process per connection",
+    edges: ["e-cli-pm","e-pm-be"], nodes: ["client","postmaster","backend"], decor: [],
+    steps: ["Client mở kết nối TCP tới cổng <code>5432</code> (giao thức libpq).","Postmaster xác thực rồi <b>fork()</b> một backend process riêng.","Mỗi phiên = một process <code>postgres</code>; không dùng thread-pool."]
+  },
+  query: {
+    name: "Query pipeline — Parse → Rewrite → Plan → Execute",
+    edges: ["e-be-parse","e-parse-rew","e-rew-plan","e-plan-exec","e-be-cat"],
+    nodes: ["backend","parse","rewrite","plan","exec","catcache"], decor: [],
+    steps: ["<b>Parse</b>: SQL → parse tree (kiểm tra cú pháp).","<b>Rewrite</b>: áp rule & khai triển VIEW → query tree.","<b>Plan</b>: sinh nhiều plan, chọn theo cost (dùng catalog cache + statistics).","<b>Execute</b>: chạy plan theo mô hình Volcano (pull tuple)."]
+  },
+  read: {
+    name: "Đọc — buffer hit/miss & Index-Only Scan",
+    edges: ["e-exec-buf","e-buf-heap","e-vm-exec"],
+    nodes: ["exec","bufpool","heap","vm"], decor: ["clock","pagemini"],
+    steps: ["Executor xin page qua Buffer Manager.","<b>Hit</b>: đọc thẳng trong RAM. <b>Miss</b>: nạp block 8KB từ heap, chọn nạn nhân bằng <b>clock-sweep</b>.","<b>Index-Only Scan</b>: nếu VM đánh dấu <code>all-visible</code>, bỏ qua truy cập heap — chỉ đọc index."]
+  },
+  write: {
+    name: "UPDATE — cơ chế MVCC (xmin / xmax / t_ctid)",
+    edges: ["e-exec-lock","e-exec-buf","e-exec-wal","e-exec-clog"],
+    nodes: ["exec","locktable","bufpool","walbuf","clogbuf"], decor: ["mvcc"],
+    steps: ["Executor lấy row-lock (ghi vào tuple header + Lock Table).","MVCC <b>không ghi đè</b>: set <code>xmax</code> cho version cũ, chèn version mới (<code>xmin</code> = txid, <code>t_ctid</code> trỏ tới version mới).","Sinh <b>WAL record</b> → ghi vào WAL Buffers (WAL đi trước dữ liệu).","Page bị đánh dấu <b>dirty</b> trong Shared Buffer; commit sẽ ghi trạng thái vào CLOG."]
+  },
+  commit: {
+    name: "Commit — WAL flush & durability",
+    edges: ["e-exec-clog","e-clog-file","e-walbuf-writer","e-walwriter-file"],
+    nodes: ["exec","clogbuf","pgxact","walbuf","walwriter","walfile"], decor: [],
+    steps: ["COMMIT: WAL Writer <b>flush + fsync</b> WAL tới đúng LSN.","Ghi bit trạng thái transaction vào CLOG buffer → xuống <code>pg_xact</code>.","Dữ liệu heap CHƯA cần xuống đĩa — chỉ WAL bắt buộc bền vững.","Đây là điểm mấu chốt của <b>Write-Ahead Logging</b>."]
+  },
+  checkpoint: {
+    name: "Checkpoint — đồng bộ buffer bẩn xuống heap",
+    edges: ["e-ckpt-buf","e-buf-heap","e-arch-wal"],
+    nodes: ["checkpointer","bufpool","heap","walfile","archiver"], decor: ["clock"],
+    steps: ["Checkpointer quét toàn bộ Shared Buffers, ghi mọi <b>dirty page</b> xuống data file + fsync.","Ghi checkpoint record vào WAL, cập nhật control file (redo point).","WAL Archiver copy các segment 16MB đã đầy (<code>archive_command</code> → PITR).","Sau checkpoint, WAL cũ có thể được tái sử dụng / dọn dẹp."]
+  },
+  bgwriter: {
+    name: "Background Writer — trickle dirty pages",
+    edges: ["e-bg-buf","e-buf-heap"],
+    nodes: ["bgwriter","bufpool","heap"], decor: ["clock"],
+    steps: ["Background Writer rảo (clock-sweep) qua buffer descriptors.","Ghi dần dirty page ra đĩa để luôn có buffer sạch để thay thế.","Giảm khựng khi backend cần evict buffer giữa hai checkpoint."]
+  },
+  vacuum: {
+    name: "Autovacuum — dọn dead tuple, cập nhật VM/FSM",
+    edges: ["e-avl-avw","e-avw-buf","e-avw-vm"],
+    nodes: ["avlauncher","avworker","bufpool","heap","vm","fsm"], decor: ["mvcc","pagemini"],
+    steps: ["Launcher lên lịch, spawn Worker theo ngưỡng dead tuples.","Worker quét heap, thu hồi tuple chết (<code>xmax</code> đã commit & không snapshot nào còn thấy).","Cập nhật <b>FSM</b> (chỗ trống) và <b>VM</b> (all-visible/all-frozen); <b>freeze</b> chống XID wraparound.","VM = all-visible mở đường cho <b>Index-Only Scan</b> và giúp vacuum bỏ qua page sạch."]
+  }
+};
+
+const stage = document.getElementById('stage');
+const nodes = document.querySelectorAll('.node');
+const edges = document.querySelectorAll('.edge');
+const elbls = document.querySelectorAll('.elbl');
+const decors = document.querySelectorAll('.decor');
+const chips = document.querySelectorAll('.chip');
+const fcap = document.getElementById('flowcap');
+
+function setFlow(key) {
+  chips.forEach(c => c.classList.toggle('on', c.dataset.flow === key));
+  edges.forEach(e => e.classList.remove('lit'));
+  elbls.forEach(l => l.classList.remove('lit'));
+  nodes.forEach(n => n.classList.remove('lit'));
+  decors.forEach(d => d.classList.remove('lit'));
+  if (key === 'all') { stage.classList.remove('flowing'); fcap.classList.remove('show'); return; }
+  const f = FLOWS[key];
+  stage.classList.add('flowing');
+  f.edges.forEach(id => document.getElementById(id)?.classList.add('lit'));
+  elbls.forEach(l => { if (f.edges.includes(l.dataset.e)) l.classList.add('lit'); });
+  f.nodes.forEach(k => document.querySelector(`.node[data-k="${k}"]`)?.classList.add('lit'));
+  (f.decor || []).forEach(id => document.getElementById(id)?.classList.add('lit'));
+  document.getElementById('f-name').textContent = f.name;
+  document.getElementById('f-steps').innerHTML = f.steps.map(s => `<li>${s}</li>`).join('');
+  fcap.classList.add('show');
+}
+chips.forEach(c => c.addEventListener('click', () => setFlow(c.dataset.flow)));
+
+nodes.forEach(n => n.addEventListener('click', () => {
+  nodes.forEach(x => x.classList.remove('sel'));
+  n.classList.add('sel');
+  const d = DETAIL[n.dataset.k];
+  if (!d) return;
+  document.getElementById('d-title').textContent = d.t;
+  document.getElementById('d-meta').textContent = d.m;
+  document.getElementById('d-body').innerHTML = d.b;
+}));
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme')
+    || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('pg-theme', next);
+});
+</script>
